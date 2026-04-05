@@ -1,0 +1,15 @@
+# dependencies
+node_modules
+
+# build
+dist
+
+# environment variables
+.env
+.env.development
+.env.production
+.env.local
+.env.test
+
+# misc
+.DS_Store
