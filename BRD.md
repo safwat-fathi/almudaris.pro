@@ -2,13 +2,13 @@
 
 ## Product: Al-Mudaris Pro (المدرس برو)
 
-## Version: MVP v3.0 (Finalized Scope)
+## Version: MVP v3.1 (Invitation & Student Model Finalized)
 
 ---
 
 # 1. 🧭 Product Vision
 
-Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Egypt to manage their daily operations efficiently while providing **structured visibility for parents across multiple children**.
+Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Egypt to manage their daily operations efficiently while providing **structured visibility for parents across multiple children and multiple teachers**.
 
 ---
 
@@ -18,6 +18,7 @@ Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Eg
 * Increase parent engagement and transparency
 * Eliminate manual tracking (paper, WhatsApp chaos)
 * Enable daily usage with minimal friction
+* Ensure **clean student identity across multiple teachers**
 
 ---
 
@@ -31,17 +32,19 @@ Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Eg
 
 ---
 
-## 👨‍👩‍👦 Parent (Secondary)
+## 👨‍👩‍👦 Parent (Primary Relationship Owner)
 
 * Has **multiple students (children)**
-* Tracks each child independently
+* Manages and confirms student identity
+* Can connect children to multiple teachers
 
 ---
 
-## 👨‍🎓 Student (Secondary)
+## 👨‍🎓 Student (Core Entity)
 
-* Linked to a parent (optional)
-* Can view personal academic data
+* Linked to a parent
+* Can be linked to **multiple teachers**
+* Has a single unified identity in the system
 
 ---
 
@@ -52,35 +55,49 @@ Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Eg
 ## 4.1 Unified Student Entity (CRITICAL)
 
 * Student exists **once in the system**
-* Can be:
+* Created via:
 
-  * Created by teacher
-  * Created via parent invite
-* Later **linked (NOT duplicated)**
+  * Parent (primary source of truth)
+  * Teacher (as *pending only*)
+* Must NEVER be duplicated
+* Can be linked to multiple teachers
 
 ---
 
 ## 4.2 Relationship-Based Access
 
 * Teachers do NOT own students
-* Access is derived via:
-
-  * Groups
-  * Enrollments
+* Students are linked to teachers via relationships
+* A student can have **multiple teachers simultaneously**
 
 ---
 
-## 4.3 Parent Multi-Student Model
+## 4.3 Parent Ownership Model (CRITICAL)
 
-* Parent account contains multiple students
-* Data is always scoped per student
+* Parent is the **owner of student identity**
+* Only parent can:
+
+  * Confirm student data
+  * Resolve duplicates
+  * Finalize student-teacher relationships
 
 ---
 
-## 4.4 Simplicity First
+## 4.4 Pending → Active Lifecycle
+
+* Students created by teachers are:
+
+  * 🟡 **Pending (unverified)**
+* Students confirmed by parent become:
+
+  * 🟢 **Active (verified)**
+
+---
+
+## 4.5 Simplicity First
 
 * Fast actions (attendance < 3 seconds)
-* Minimal input required
+* Minimal required inputs
 * Mobile-first experience
 
 ---
@@ -93,11 +110,15 @@ Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Eg
 
 ### Teacher
 
-* Signup / Login (phone/email)
+* Signup / Login (phone)
 
-### Parent / Student
+### Parent
 
-* Join via **invite link only**
+* Signup / Login (phone)
+
+### Student
+
+* Signup / Login (optional, secondary)
 
 ---
 
@@ -105,59 +126,122 @@ Al-Mudaris Pro is a **teacher-first platform** designed for private tutors in Eg
 
 Teacher can:
 
-* Create group
+* Create / Edit / Delete group
 * Define monthly price
-* Manage students
+* Add / manage students
 
 ---
 
-## 5.3 Student Management (UPDATED)
+## 5.3 Student Management (FINAL MODEL)
 
 ---
 
-### Teacher Can:
+## 👨‍🏫 Teacher Capabilities
 
-* Add student manually:
+### 1. Quick Add Student (NEW - CRITICAL)
 
-  * Name (required)
-  * Phone (optional but recommended)
+Teacher can **quickly add a student** for immediate usage:
+
+Required:
+
+* Student Name
+* Parent Phone
+
+Optional:
+
+* Student Phone
 
 ---
+
+### ⚠️ Result:
+
+* System creates:
+
+  * 🟡 **Pending Student**
+* Student is:
+
+  * Temporarily linked to teacher
+  * Not fully verified
+
+---
+
+### 2. Invite Parent
+
+* Teacher has a unique invitation link
+* Parent completes setup and confirms student
+
+---
+
+## 👨‍👩‍👦 Parent Capabilities
 
 ### Parent Can:
 
-* Create student via invite
+* Create student manually
+* Add multiple students
+* Link students to multiple teachers
 
 ---
 
-### System Must:
+## 🔁 System Responsibilities
 
-* Avoid duplication
-* Support linking:
+### During Parent Flow:
 
-👉 If student exists:
+System must:
 
-* Ask parent to confirm
-* Link instead of creating new
+* Detect existing parent account
+* Detect existing students
+* Prevent duplication
 
 ---
 
-## 5.4 Invitations System
+### Parent Decision Required:
 
-* Unique link per group
-* Handles:
+When parent opens invite:
 
-  * Parent creation
-  * Student creation
-  * Student linking
+* Select existing student OR
+* Create new student OR
+* Merge duplicate student
+
+---
+
+### Final Outcome:
+
+* Student becomes:
+
+  * 🟢 Active
+* Relationships established:
+
+  * Parent ↔ Student
+  * Student ↔ Teacher
+
+---
+
+## 5.4 Invitations System (UPDATED)
+
+---
+
+### Invitation Types:
+
+#### 1. Parent Invitation via QR Code or Link (Primary) **(Parent must be already registered)**
+
+* Sent by teacher
+* Used to:
+
+  * Link parent account to teacher 
+  * Confirm relationship
 
 ---
 
 ## 5.5 Attendance
 
-* Mark per student per date:
+* Mark per student per session:
 
   * حاضر / غائب
+
+* Works for:
+
+  * Pending students
+  * Active students
 
 ---
 
@@ -166,6 +250,10 @@ Teacher can:
 * Monthly tracking:
 
   * Paid / Unpaid
+
+* (Optional constraint):
+
+  * Full payment tracking enabled after student becomes Active
 
 ---
 
@@ -177,7 +265,7 @@ Teacher can:
 
   * Title
   * Description
-  * PDF upload (optional)
+  * PDF/Image upload (optional)
   * Due date
 
 * Edit / Delete
@@ -197,7 +285,12 @@ Teacher can:
 ### 👨‍🏫 Teacher Dashboard
 
 * Groups
-* Students
+* Students:
+
+  * Show status:
+
+    * 🟡 Pending
+    * 🟢 Active
 * Attendance
 * Payments
 * Homework
@@ -212,24 +305,30 @@ Teacher can:
   * Attendance
   * Payments
   * Homework
+  * Teachers list (multi-teacher support)
 
 ---
 
 ### 👨‍🎓 Student Dashboard
 
-* Personal view only
+* Personal academic data only
 
 ---
 
-# 6. 🔁 User Flows
+# 6. 🔁 User Flows (UPDATED)
 
 ---
 
-## Teacher Flow
+## 👨‍🏫 Teacher Flow
 
 1. Signup
+
 2. Create group
-3. Add or invite students
+
+3. Add students via:
+
+   * Quick Add (Pending)
+   * Invite Parent (QR Code or Link) then parent can link existing student to teacher
 4. Manage:
 
    * Attendance
@@ -238,45 +337,65 @@ Teacher can:
 
 ---
 
-## Parent Flow
-
-### First Child
-
-* Open invite
-* Create account
-* Student created
+## 👨‍👩‍👦 Parent Flow
 
 ---
 
-### Additional Child
+### Case 1: New Parent
 
-* Open invite
-* System detects parent
-* Add student to same account
+1. Register
+
+2. System shows:
+
+   * Pending student OR empty state
+
+3. Parent:
+
+   * Confirms student OR
+   * Creates new student
+
+4. Student becomes Active
 
 ---
 
-### Linking Existing Student
+### Case 2: Existing Parent
 
-* System detects match
-* Parent confirms
-* Student linked
+1. Open invite
+
+2. Login
+
+3. System shows:
+
+   * Existing students
+   * Pending student (if exists)
+
+4. Parent chooses:
+
+   * Link existing student OR
+   * Create new student OR
+   * Merge duplicate
+
+5. Link existing student to teacher
 
 ---
 
-## Student Flow
+## 👨‍🎓 Student Flow
 
-* Join via invite
-* View data
+* (Optional in MVP)
+* Created by parent only
+* Login
+* View academic data
 
 ---
 
 # 7. 📊 Success Metrics
 
 * Teacher activation rate
+* Quick Add usage rate
+* Parent claim rate (VERY IMPORTANT)
+* Duplicate resolution success rate
 * Daily attendance usage
-* Homework creation rate
-* Parent engagement (multi-student usage)
+* Parent engagement (multi-student + multi-teacher)
 
 ---
 
@@ -286,12 +405,15 @@ Teacher can:
 * Homework submissions
 * AI assistant
 * Advanced notifications
+* Full student self-registration flow
 
 ---
 
 # 9. 🚀 Future Vision
 
-* Multi-teacher parent view
-* AI assistant
+* Multi-teacher unified parent dashboard
+* Student self-managed accounts
+* AI assistant for teachers
 * Payment integrations
-* Smart attendance
+* Smart attendance insights
+* Automated duplicate detection & merging
