@@ -2,6 +2,20 @@
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
+## Next.js 16 Route Protection and Middleware
+- `middleware.ts` is DEPRECATED in Next.js 16.
+- You MUST use `proxy.ts` at the root (or `src/proxy.ts`) instead.
+- The proxy runtime is Node.js and cannot be configured.
+- To intercept requests, export a `proxy` function and a `config` object with a `matcher`.
+- Example:
+  ```ts
+  import type { NextRequest } from 'next/server'
+  export const config = { matcher: '/api/:path*' }
+  export function proxy(request: NextRequest) {
+    if (!isValid(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  ```
 <!-- END:nextjs-agent-rules -->
 
 # AGENTS.md
@@ -161,6 +175,7 @@ export const STORAGE_KEYS = {
 } as const;
 ```
 
+- Use `frontend/lib/format.ts` for any localized formatting of dates, numbers, and currencies (Egyptian Arabic). Never use `new Date().toLocaleDateString` or `new Intl.NumberFormat` directly in components.
 - Use as const for static maps
 - Check existing utilities before re-implementing
 - Don’t import React just import what you need from its named exports

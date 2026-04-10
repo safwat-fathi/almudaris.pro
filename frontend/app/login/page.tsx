@@ -1,22 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
+import { UserRole } from "@/types/user";
+import { loginAction } from "@/app/actions/auth.actions";
 
 export default function LoginSelectionPage() {
-  const [selectedRole, setSelectedRole] = useState<"teacher" | "student_parent">("teacher");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("teacher");
   const router = useRouter();
+  
+  const [state, formAction, isPending] = useActionState(loginAction, null);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedRole === "teacher") {
-      router.push("/");
-    } else if (selectedRole === "student_parent") {
-      router.push("/student-dashboard");
+  useEffect(() => {
+    if (state?.success) {
+      if (state.role === "teacher") {
+        router.push("/");
+      } else {
+        router.push("/student-dashboard");
+      }
+    } else if (state?.requiresOtp && state?.phone) {
+      router.push(`/verify-otp?phone=${encodeURIComponent(state.phone)}`);
     }
-  };
+  }, [state, router]);
 
   return (
     <div className="flex flex-col items-center w-full min-h-screen pt-4">
@@ -89,16 +96,16 @@ export default function LoginSelectionPage() {
             {/* Student/Parent Card */}
             <button
               type="button"
-              onClick={() => setSelectedRole("student_parent")}
+              onClick={() => setSelectedRole("parent")}
               className={`group relative flex items-center p-5 rounded-lg border-2 transition-all duration-300 text-right overflow-hidden shadow-sm ${
-                selectedRole === "student_parent"
+                selectedRole === "parent"
                   ? "border-secondary bg-secondary/5"
                   : "border-transparent bg-surface-container-lowest hover:border-secondary/50"
               }`}
             >
               <div
                 className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                  selectedRole === "student_parent"
+                  selectedRole === "parent"
                     ? "bg-secondary text-on-secondary"
                     : "bg-secondary-container text-on-secondary-container group-hover:bg-secondary group-hover:text-on-secondary"
                 }`}
@@ -117,12 +124,12 @@ export default function LoginSelectionPage() {
               </div>
               <span
                 className={`material-symbols-outlined absolute left-6 transition-opacity text-secondary  ${
-                  selectedRole === "student_parent" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  selectedRole === "parent" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 }`}
               >
                 chevron_left
               </span>
-              {selectedRole === "student_parent" && (
+              {selectedRole === "parent" && (
                 <div className="absolute inset-0 bg-secondary/5 pointer-events-none" />
               )}
             </button>
@@ -134,18 +141,26 @@ export default function LoginSelectionPage() {
           <h2 className="font-manrope text-xl font-bold text-on-surface mb-6">
             تسجيل الدخول
           </h2>
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" action={formAction}>
+            {state?.error && (
+              <div className="bg-error/10 text-error p-3 rounded-lg text-sm font-semibold">
+                {state.error}
+              </div>
+            )}
+
             {/* Phone Input */}
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-on-surface-variant mr-1">
                 رقم الهاتف
               </label>
               <Input
+                name="phone"
                 placeholder="01XXXXXXXXX"
                 type="tel"
                 dir="ltr"
                 icon="smartphone"
                 className="text-left font-medium"
+                required
               />
             </div>
 
@@ -163,23 +178,28 @@ export default function LoginSelectionPage() {
                 </Link>
               </div>
               <Input
+                name="password"
                 placeholder="••••••••"
                 type="password"
                 dir="ltr"
                 icon="lock"
                 className="text-left font-medium"
+                required
               />
             </div>
 
             {/* Submit Button */}
             <button
-              className="w-full h-16 bg-primary text-on-primary rounded-md font-manrope text-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-container hover:text-on-primary-container active:scale-[0.98] transition-all shadow-lg shadow-primary/20 mt-8"
+              className="w-full h-16 bg-primary text-on-primary rounded-md font-manrope text-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-container hover:text-on-primary-container active:scale-[0.98] transition-all shadow-lg shadow-primary/20 mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
               type="submit"
+              disabled={isPending}
             >
-              <span>دخول</span>
-              <span className="material-symbols-outlined ">
-                login
-              </span>
+              <span>{isPending ? "جاري الدخول..." : "دخول"}</span>
+              {!isPending && (
+                <span className="material-symbols-outlined">
+                  login
+                </span>
+              )}
             </button>
           </form>
         </section>

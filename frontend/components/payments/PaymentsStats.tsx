@@ -1,5 +1,5 @@
 import { mockStats } from "@/data/mockData";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatPercentage } from "@/lib/format";
 
 export default function PaymentsStats() {
   return (
@@ -25,7 +25,7 @@ export default function PaymentsStats() {
         <div className="space-y-1">
           <p className="font-medium text-sm text-on-surface-variant">نسبة التحصيل</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold font-headline text-on-surface">{mockStats.collectionRate}</span>
+            <span className="text-3xl font-extrabold font-headline text-on-surface">{formatPercentage(mockStats.collectionRate)}</span>
           </div>
         </div>
       </div>

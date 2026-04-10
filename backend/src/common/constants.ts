@@ -19,6 +19,6 @@ const CONSTANTS = {
     'account management',
     'payment issue',
   ],
-};
+} as const;
 
 export default CONSTANTS;

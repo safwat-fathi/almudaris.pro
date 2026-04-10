@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import dataSource from 'src/config/orm.config';
+import { seedUsers } from './seeders/user.seeder';
 
 async function bootstrap() {
   const logger = new Logger('Seed');
@@ -8,7 +9,7 @@ async function bootstrap() {
   await dataSource.initialize();
 
   try {
-    // Add seeders here
+    await seedUsers(dataSource);
     logger.log('Seeding completed successfully.');
   } catch (error) {
     logger.error('Seeding error:', error);

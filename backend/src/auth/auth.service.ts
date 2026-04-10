@@ -1,27 +1,31 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { SignupDto } from './dto/signup.dto';
-import { Otp } from './entities/otp.entity';
-import { WhatsappService } from '../whatsapp/whatsapp.service';
-import * as bcrypt from 'bcrypt';
+import { compare } from 'bcrypt';
+import twilio from 'twilio';
 
 @Injectable()
 export class AuthService {
+  private twilioClient: twilio.Twilio;
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    @InjectRepository(Otp)
-    private otpRepository: Repository<Otp>,
-    private whatsappService: WhatsappService,
-  ) {}
+  ) {
+    const accountSid = process.env.ACCOUNT_SID || '';
+    const authToken = process.env.AUTH_TOKEN || '';
+    this.twilioClient = twilio(accountSid, authToken);
+  }
 
   async validateUser(phone: string, pass: string): Promise<User | null> {
-    const user = await this.usersService.findByPhone(phone);
-    if (user && user.password && (await bcrypt.compare(pass, user.password))) {
+    const user = await this.usersService.findForAuth(phone);
+    if (user && user.password && (await compare(pass, user.password))) {
       return user;
     }
     return null;
@@ -30,19 +34,37 @@ export class AuthService {
   login(user: User) {
     const payload = { sub: user.id, role: user.role };
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
       user: {
         id: user.id,
         name: user.name,
         role: user.role,
         phone: user.phone,
+        email: user.email,
       },
     };
+  }
+
+  async refreshToken(token: string) {
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET || 'super-secret-key-change-me',
+      });
+      const user = await this.usersService.findById(payload.sub);
+      if (!user || !user.is_active) {
+        throw new UnauthorizedException('User not found or inactive');
+      }
+      return this.login(user);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 
   async signup(data: SignupDto) {
     const name = data.name;
     const phone = data.phone;
+    const email = data.email;
     const password = data.password;
     const role = data.role;
 
@@ -58,18 +80,18 @@ export class AuthService {
       throw new BadRequestException('User already exists');
     }
 
-    const hashedPassword = password
-      ? await bcrypt.hash(password, 10)
-      : undefined;
-
-    const newUser = await this.usersService.create({
+    await this.usersService.create({
       name,
       phone,
-      password: hashedPassword,
+      email,
+      password,
       role: userRole,
+      is_active: false,
     });
 
-    return this.login(newUser);
+    await this.requestOtp(phone);
+
+    return { message: 'User registered successfully. OTP sent.', phone };
   }
 
   async requestOtp(phone: string): Promise<void> {
@@ -78,73 +100,48 @@ export class AuthService {
       throw new BadRequestException('Phone is required');
     }
 
-    // Generate a 6 digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedOtp = await bcrypt.hash(otpCode, 10);
+    const existingUser = await this.usersService.findByPhone(phone);
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
+    }
 
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+    const serviceSid = process.env.VERIFY_SERVICE_SID;
+    if (!serviceSid) {
+      throw new Error('VERIFY_SERVICE_SID is not configured');
+    }
 
-    const otpEntity = this.otpRepository.create({
-      phone,
-      hashedOtp,
-      expiresAt,
-    });
-
-    await this.otpRepository.save(otpEntity);
+    const formattedPhone = phone.startsWith('+') ? phone : `+2${phone}`;
 
     try {
-      await this.whatsappService.sendTemplatedMessage({
-        key: 'otp_verification',
-        to: phone,
-        payload: { otp: otpCode },
-      });
-    } catch (e) {
-      // Basic retry
-      try {
-        await this.whatsappService.sendTemplatedMessage({
-          key: 'otp_verification',
-          to: phone,
-          payload: { otp: otpCode },
-        });
-      } catch (retryError) {
-        console.error('Failed to send OTP after retry', retryError);
-      }
+      await this.twilioClient.verify.v2
+        .services(serviceSid)
+        .verifications.create({ to: formattedPhone, channel: 'sms' });
+    } catch (error) {
+      console.error('Twilio verify error', error);
+      throw new BadRequestException('Failed to send OTP');
     }
   }
 
   async verifyOtp(phone: string, otpCode: string): Promise<any> {
-    const otpRecord = await this.otpRepository.findOne({
-      where: { phone },
-      order: { createdAt: 'DESC' },
-    });
+    const serviceSid = process.env.VERIFY_SERVICE_SID;
+    if (!serviceSid) {
+      throw new Error('VERIFY_SERVICE_SID is not configured');
+    }
 
-    if (!otpRecord) {
+    const formattedPhone = phone.startsWith('+') ? phone : `+2${phone}`;
+
+    try {
+      const verificationCheck = await this.twilioClient.verify.v2
+        .services(serviceSid)
+        .verificationChecks.create({ to: formattedPhone, code: otpCode });
+
+      if (verificationCheck.status !== 'approved') {
+        throw new UnauthorizedException('Invalid or expired OTP');
+      }
+    } catch (error: any) {
+      if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException('Invalid or expired OTP');
     }
-
-    if (otpRecord.isUsed) {
-      throw new UnauthorizedException('OTP already used');
-    }
-
-    if (otpRecord.expiresAt < new Date()) {
-      throw new UnauthorizedException('OTP expired');
-    }
-
-    if (otpRecord.attempts >= 5) {
-      throw new UnauthorizedException('Too many failed attempts. Try requesting a new OTP.');
-    }
-
-    const isValid = await bcrypt.compare(otpCode, otpRecord.hashedOtp);
-
-    if (!isValid) {
-      otpRecord.attempts += 1;
-      await this.otpRepository.save(otpRecord);
-      throw new UnauthorizedException('Invalid OTP');
-    }
-
-    otpRecord.isUsed = true;
-    await this.otpRepository.save(otpRecord);
 
     let user = await this.usersService.findByPhone(phone);
     if (!user) {
@@ -153,7 +150,11 @@ export class AuthService {
         phone,
         name: 'New User', // Placeholder, can be updated later
         role: UserRole.PARENT, // Default role for auto-created
+        is_active: true,
       });
+    } else if (!user.is_active) {
+      user =
+        (await this.usersService.update(user.id, { is_active: true })) || user;
     }
 
     return this.login(user);

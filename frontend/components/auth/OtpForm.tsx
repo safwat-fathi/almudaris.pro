@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyOtpAction, requestOtpAction } from "@/app/actions/auth.actions";
+import { formatNumber } from "@/lib/format";
 
 export default function OtpForm() {
   const router = useRouter();
@@ -25,7 +26,12 @@ export default function OtpForm() {
 
   useEffect(() => {
     if (state?.success) {
-      router.push("/welcome"); // or student dashboard
+      // Safe check for role since verifyOtpAction now returns it
+      if (state.role === "teacher") {
+        router.push("/");
+      } else {
+        router.push("/student-dashboard");
+      }
     }
   }, [state, router]);
 
@@ -68,7 +74,7 @@ export default function OtpForm() {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
+    return `${formatNumber(m)}:${formatNumber(s, { minimumIntegerDigits: 2 })}`;
   };
 
   return (

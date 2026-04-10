@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { mockSessions, mockStudents } from "@/data/mockData";
+import { formatNumber, formatDate, formatCurrency } from "@/lib/format";
 import { useRouter } from "next/navigation";
 
 type AttendanceStatus = "present" | "absent" | "";
@@ -96,7 +97,7 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
             <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-outline font-medium text-sm">
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">location_on</span> {session.location}</span>
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">schedule</span> {session.time}</span>
-              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">calendar_today</span> {session.date}</span>
+              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">calendar_today</span> {formatDate(session.date)}</span>
             </div>
           </div>
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
@@ -108,15 +109,15 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
         <div className="flex gap-3 mt-6">
           <div className="flex-1 bg-surface-container-low p-3 rounded-xl flex flex-col items-center justify-center">
             <span className="text-[10px] text-outline uppercase tracking-wider font-bold">إجمالي الطلاب</span>
-            <span className="text-lg font-bold text-on-surface">{totalCount}</span>
+            <span className="text-lg font-bold text-on-surface">{formatNumber(totalCount)}</span>
           </div>
           <div className="flex-1 bg-secondary-container/30 p-3 rounded-xl flex flex-col items-center justify-center border border-secondary-container">
             <span className="text-[10px] text-on-secondary-container uppercase tracking-wider font-bold">حضر الآن</span>
-            <span className="text-lg font-bold text-on-secondary-container">{presentCount}</span>
+            <span className="text-lg font-bold text-on-secondary-container">{formatNumber(presentCount)}</span>
           </div>
           <div className="flex-1 bg-tertiary-container/10 p-3 rounded-xl flex flex-col items-center justify-center border border-tertiary-container/20">
             <span className="text-[10px] text-on-tertiary-container uppercase tracking-wider font-bold">لم يدفع</span>
-            <span className="text-lg font-bold text-on-tertiary-container">{unpaidCount}</span>
+            <span className="text-lg font-bold text-on-tertiary-container">{formatNumber(unpaidCount)}</span>
           </div>
         </div>
       </div>
@@ -173,7 +174,7 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
                 ) : payments[student.id] === "paid" ? (
                   <span className="text-[10px] text-outline">تم الدفع مسبقاً (اشتراك)</span>
                 ) : (
-                  <span className="text-[10px] text-tertiary font-bold">مديونية: ٥٠ ج</span>
+                  <span className="text-[10px] text-tertiary font-bold">مديونية: {formatCurrency(50)}</span>
                 )}
               </div>
             </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { formatNumber } from "@/lib/format";
 
 export const metadata: Metadata = {
 	title: "Al-Mudaris Pro | المدرس برو - المنصة الذكية للمعلمين",
@@ -555,7 +556,7 @@ export default function LandingPage() {
 							المدرس برو
 						</span>
 						<p>
-							© المدرس برو. المساعد الذكي للمعلمين. {new Date().getFullYear().toLocaleString("ar-EG")}
+							© المدرس برو. المساعد الذكي للمعلمين. {formatNumber(new Date().getFullYear())}
 						</p>
 					</div>
 					<div className="flex flex-wrap justify-center gap-8 items-center">

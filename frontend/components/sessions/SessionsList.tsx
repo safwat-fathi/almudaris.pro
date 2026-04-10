@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { mockSessions } from "@/data/mockData";
+import { formatNumber } from "@/lib/format";
 
 export default function SessionsList() {
   return (
@@ -56,7 +57,7 @@ export default function SessionsList() {
               </div>
               <div className="flex items-center gap-2 text-on-surface-variant">
                 <span className="material-symbols-outlined text-xl opacity-70">group</span>
-                <span className="text-sm font-medium">{session.studentsCount}</span>
+                <span className="text-sm font-medium">{formatNumber(session.studentsCount)} طالب</span>
               </div>
             </div>
             

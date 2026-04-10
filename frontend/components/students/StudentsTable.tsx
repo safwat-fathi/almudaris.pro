@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { mockStudents } from "@/data/mockData";
+import { formatNumber } from "@/lib/format";
 
 export default function StudentsTable() {
   const [openActionId, setOpenActionId] = useState<string | null>(null);
@@ -69,7 +70,7 @@ export default function StudentsTable() {
                       </div>
                     </td>
                     <td className="py-5 px-4 font-body tracking-wider text-on-surface-variant" dir="ltr"> {/* Phone numbers generally left-to-right format */}
-                      +20 100 {Math.floor(Math.random() * 900000) + 100000}
+                      +{formatNumber(20)} {formatNumber(100)} {formatNumber(Math.floor(Math.random() * 900000) + 100000, { useGrouping: false })}
                     </td>
                     <td className="py-5 px-4 text-center">
                       <span className={`px-4 py-1.5 rounded-full text-sm font-bold tracking-wide ${isActive ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container-high text-on-surface-variant"}`}>

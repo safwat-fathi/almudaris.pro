@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { formatNumber } from "@/lib/format";
 
 interface SessionCardProps {
   session: {
     id: string;
     title: string;
     time: string;
-    studentsCount: string;
+    studentsCount: number;
     icon: string;
     color: string;
     status: string;
@@ -33,7 +34,7 @@ export default function SessionCard({ session }: SessionCardProps) {
               <span className="material-symbols-outlined text-[18px]">schedule</span> {session.time}
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[18px]">group</span> {session.studentsCount}
+              <span className="material-symbols-outlined text-[18px]">group</span> {formatNumber(session.studentsCount)} طالب
             </span>
           </div>
         </div>

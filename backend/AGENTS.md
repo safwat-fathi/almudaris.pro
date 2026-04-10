@@ -15,6 +15,7 @@ This file provides guidelines for AI agents and coding assistants when working w
 ## Code style and structure
 
 - Follow the existing patterns in `src/` for module structure, dependency injection, and file naming.
+- Always prefer `process.env` directly over NestJS `ConfigService` when reading environment variables.
 - Always add swagger decorators to all controllers routes.
 - Prefer descriptive variable and function names over abbreviations.
 - Keep functions and classes focused; avoid unnecessary complexity or over-engineering.

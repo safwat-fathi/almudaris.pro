@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import TokenRefreshProvider from "@/components/auth/TokenRefreshProvider";
 
 export const metadata: Metadata = {
 	title: {
@@ -32,7 +33,9 @@ export default function RootLayout({
 				/>
 			</head>
 			<body className="font-body bg-surface text-on-surface min-h-full flex flex-col pb-8">
-				{children}
+				<TokenRefreshProvider>
+					{children}
+				</TokenRefreshProvider>
 			</body>
 		</html>
 	);

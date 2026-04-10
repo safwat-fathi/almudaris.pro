@@ -3,15 +3,16 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
-import { requestOtpAction } from "@/app/actions/auth.actions";
+import { signupAction } from "@/app/actions/auth.actions";
 
 export default function TeacherRegistrationForm() {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(requestOtpAction, null);
+  const [state, formAction, isPending] = useActionState(signupAction, null);
 
   useEffect(() => {
-    if (state?.success && state?.phone) {
-      // Pass the phone number to the OTP verification page securely
+    if (state?.success) {
+      router.push("/");
+    } else if (state?.requiresOtp && state?.phone) {
       router.push(`/verify-otp?phone=${encodeURIComponent(state.phone)}`);
     }
   }, [state, router]);
@@ -48,6 +49,17 @@ export default function TeacherRegistrationForm() {
       </div>
 
       <div className="space-y-2">
+        <label className="block text-sm font-semibold text-on-surface-variant mr-1">البريد الإلكتروني (اختياري)</label>
+        <Input
+          name="email"
+          placeholder="email@example.com"
+          type="email"
+          dir="ltr"
+          className="text-left"
+        />
+      </div>
+
+      <div className="space-y-2">
         <label className="block text-sm font-semibold text-on-surface-variant mr-1">كلمة المرور</label>
         <Input
           name="password"
@@ -63,7 +75,7 @@ export default function TeacherRegistrationForm() {
           disabled={isPending}
           className="w-full h-16 bg-primary text-on-primary font-manrope font-bold text-xl rounded-lg shadow-lg shadow-primary/20 hover:bg-primary-container hover:text-on-primary-container disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all flex items-center justify-center gap-2"
         >
-          {isPending ? "جاري الإرسال..." : "ابدأ الآن"}
+          {isPending ? "جاري التسجيل..." : "ابدأ الآن"}
         </button>
         <p className="text-center mt-4 text-secondary font-bold text-sm tracking-wide">
           مجاني بالكامل - بدون أي التزام

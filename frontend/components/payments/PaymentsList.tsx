@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { mockStudents } from "@/data/mockData";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export default function PaymentsList() {
   const [filterStatus, setFilterStatus] = useState<"all" | "paid" | "unpaid">("all");
@@ -73,7 +73,7 @@ export default function PaymentsList() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-on-surface">01 مايو 2024</span>
+                    <span className="text-sm font-medium text-on-surface">{formatDate(new Date('2024-05-01'))}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-bold text-on-surface">{formatCurrency(350)}</span>

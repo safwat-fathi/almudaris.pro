@@ -10,13 +10,13 @@ import {
 import { UserRole } from '../../users/entities/user.entity';
 
 export class SignupDto {
-  @ApiProperty({ example: 'John Doe', description: 'The name of the user' })
+  @ApiProperty({ example: 'محمد احمد', description: 'The name of the user' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
   @ApiPropertyOptional({
-    example: '+201000000000',
+    example: '01000000000',
     description: 'The phone number of the user',
   })
   @IsString()
@@ -32,7 +32,7 @@ export class SignupDto {
   email?: string;
 
   @ApiPropertyOptional({
-    example: 'strongpassword123',
+    example: 'password123',
     description: 'The password for email/phone login',
     minLength: 6,
   })
