@@ -1,8 +1,8 @@
-# Specification Quality Checklist: Sessions Management
+# Specification Quality Checklist: Group Management
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-04-10
-**Feature**: [specs/001-sessions-management/spec.md](../spec.md)
+**Feature**: [specs/001-group-management/spec.md](../spec.md)
 
 ## Content Quality
 

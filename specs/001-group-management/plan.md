@@ -1,7 +1,7 @@
 # Implementation Plan: Groups Management
 
 **Branch**: `002-parent-invitations` | **Date**: 2026-04-10 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-sessions-management/spec.md`
+**Input**: Feature specification from `/specs/001-group-management/spec.md`
 
 ## Summary
 
@@ -34,7 +34,7 @@ The platform requires a core "Groups" feature where teachers can schedule teachi
 ### Documentation (this feature)
 
 ```text
-specs/001-sessions-management/
+specs/001-group-management/
 ├── plan.md              
 ├── research.md          
 ├── data-model.md        
@@ -48,7 +48,7 @@ specs/001-sessions-management/
 ```text
 backend/
 ├── src/
-│   ├── sessions/
+│   ├── groups/
 │   │   ├── dto/
 │   │   ├── entities/
 │   │   ├── controllers/
@@ -57,9 +57,9 @@ backend/
 frontend/
 ├── app/
 │   ├── (teacher)/
-│   │   └── sessions/
+│   │   └── groups/
 ├── components/
-│   └── sessions/
+│   └── groups/
 └── services/
     ├── api/
     └── bff/

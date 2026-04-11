@@ -17,9 +17,9 @@ Represents the core teaching event.
 - `recurring_series_id`: Integer (Nullable, links groups created together)
 - `notes`: String (Nullable, editable after completion)
 
-### `SessionStudent`
+### `GroupStudent`
 Represents the many-to-many attendance relationship between a Group and a Student.
-- `session_id`: Relation to `Group`
+- `group_id`: Relation to `Group`
 - `student_id`: Relation to `User` (Role = student)
 - `attendance_status`: Enum ('Present', 'Absent', 'Not set') - Defaults to 'Not set'
 

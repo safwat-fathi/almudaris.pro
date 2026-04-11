@@ -1,9 +1,9 @@
-# API Contract: Sessions Management
+# API Contract: Group Management
 
 ## Endpoints (Backend NestJS)
 
-### `POST /sessions`
-- Creates a new session or a recurring series of up to 24 instances.
+### `POST /groups`
+- Creates a new group or a recurring series of up to 24 instances.
 - **Request Body**: 
   ```json
   { 
@@ -18,10 +18,10 @@
     "recurrence_pattern": "WEEKLY"
   }
   ```
-- **Response**: `201 Created` with Session(s) array.
+- **Response**: `201 Created` with Group(s) array.
 
-### `PUT /sessions/:id`
-- Updates an upcoming session. Structural changes are blocked if the session is "Completed".
+### `PUT /groups/:id`
+- Updates an upcoming group. Structural changes are blocked if the group is "Completed".
 - **Request Body**: 
   ```json
   { 
@@ -36,8 +36,8 @@
   ```
 - **Response**: `200 OK`
 
-### `PATCH /sessions/:id/attendance`
-- Updates attendance and notes for a completed session.
+### `PATCH /groups/:id/attendance`
+- Updates attendance and notes for a completed group.
 - **Request Body**: 
   ```json
   { 
@@ -50,6 +50,6 @@
   ```
 - **Response**: `200 OK`
 
-### `DELETE /sessions/:id`
-- Cancels a session (updates status to 'Cancelled'). Applies to the single session only.
+### `DELETE /groups/:id`
+- Cancels a group (updates status to 'Cancelled'). Applies to the single group only.
 - **Response**: `204 No Content`
