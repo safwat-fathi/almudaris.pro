@@ -45,7 +45,7 @@ export const mockQuickActions = [
 		href: "/sessions/new",
 	},
 	{ id: "3", label: "تسجيل دفع", icon: "payments", href: "/payments/new" },
-	{ id: "4", label: "ملاحظة", icon: "note_alt", href: "/notes/new" },
+	{ id: "4", label: "رابط الدعوة", icon: "qr_code", href: "/profile/invite" },
 ];
 
 export const mockAlerts = [

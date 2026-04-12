@@ -494,8 +494,8 @@ export default function LandingPage() {
 								</span>
 							</summary>
 							<div className="px-6 pb-6 text-on-surface-variant leading-relaxed">
-								يمكن لولي الأمر تحميل نسخة خاصة من التطبيق "المدرس برو - أولياء
-								الأمور" ومتابعة تقارير الحضور والنتائج فورياً.
+								يمكن لولي الأمر تحميل نسخة خاصة من التطبيق &quot;المدرس برو - أولياء
+								الأمور&quot; ومتابعة تقارير الحضور والنتائج فورياً.
 							</div>
 						</details>
 						<details className="group bg-surface-container-lowest rounded-xl">

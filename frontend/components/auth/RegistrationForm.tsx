@@ -1,24 +1,39 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { signupAction } from "@/app/actions/auth.actions";
 
-export default function TeacherRegistrationForm() {
+export default function RegistrationForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const role = searchParams.get("role") || "teacher";
+  const inviteCode = searchParams.get("inviteCode");
+
   const [state, formAction, isPending] = useActionState(signupAction, null);
 
   useEffect(() => {
     if (state?.success) {
-      router.push("/");
+      if (inviteCode) {
+        window.location.href = `/invite/${inviteCode}`;
+      } else {
+        router.push("/");
+      }
     } else if (state?.requiresOtp && state?.phone) {
-      router.push(`/verify-otp?phone=${encodeURIComponent(state.phone)}`);
+      // Pass inviteCode along to verify-otp if present so we can redirect back later
+      const redirectParams = new URLSearchParams({ phone: state.phone });
+      if (inviteCode) redirectParams.append("inviteCode", inviteCode);
+      
+      router.push(`/verify-otp?${redirectParams.toString()}`);
     }
-  }, [state, router]);
+  }, [state, router, inviteCode]);
 
   return (
     <form className="w-full space-y-6" action={formAction}>
+      {/* Hidden inputs to pass params to action */}
+      <input type="hidden" name="role" value={role} />
+
       {state?.error && (
         <div className="bg-error/10 text-error p-3 rounded-lg text-sm font-semibold">
           {state.error}
@@ -64,6 +79,16 @@ export default function TeacherRegistrationForm() {
         <Input
           name="password"
           placeholder="كلمة مرور سهلة ليك"
+          type="password"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-on-surface-variant mr-1">تأكيد كلمة المرور</label>
+        <Input
+          name="confirmPassword"
+          placeholder="أعد إدخال كلمة المرور"
           type="password"
           required
         />

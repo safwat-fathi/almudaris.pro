@@ -7,7 +7,7 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Verify project structure per implementation plan
+- [x] T001 Verify project structure per implementation plan
 
 ---
 
@@ -17,10 +17,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 Generate database migration script for adding `inviteCode` to `Teacher`
-- [ ] T003 Generate database migration script for `ParentTeacherLink` join table
-- [ ] T004 Generate database migration script for `StudentTeacherEnrollment` join table
-- [ ] T005 Run database migrations locally
+- [x] T002 Generate database migration script for adding `inviteCode` to `Teacher`
+- [x] T003 Generate database migration script for `ParentTeacherLink` join table
+- [x] T004 Generate database migration script for `StudentTeacherEnrollment` join table
+- [x] T005 Run database migrations locally
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -34,11 +34,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [P] [US1] Update `Teacher` model in `backend/src/modules/teachers/entities/teacher.entity.ts` to include `inviteCode`
-- [ ] T007 [US1] Implement `inviteCode` generation/retrieval in `backend/src/modules/teachers/teachers.service.ts`
-- [ ] T008 [US1] Expose GET endpoint for teacher profile to include `inviteCode` in `backend/src/modules/teachers/teachers.controller.ts`
-- [ ] T009 [P] [US1] Create frontend UI component `frontend/src/components/invite/InviteQRCode.tsx` for displaying/downloading link and QR
-- [ ] T010 [US1] Integrate `InviteQRCode` component into teacher dashboard/profile
+- [x] T006 [P] [US1] Update `Teacher` model in `backend/src/modules/teachers/entities/teacher.entity.ts` to include `inviteCode`
+- [x] T007 [US1] Implement `inviteCode` generation/retrieval in `backend/src/modules/teachers/teachers.service.ts`
+- [x] T008 [US1] Expose GET endpoint for teacher profile to include `inviteCode` in `backend/src/modules/teachers/teachers.controller.ts`
+- [x] T009 [P] [US1] Create frontend UI component `frontend/src/components/invite/InviteQRCode.tsx` for displaying/downloading link and QR
+- [x] T010 [US1] Integrate `InviteQRCode` component into teacher dashboard/profile
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -52,11 +52,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [P] [US2] Create `ParentTeacherLink` model in `backend/src/modules/parents/entities/parent-teacher-link.entity.ts`
-- [ ] T012 [P] [US2] Expose `GET /api/teachers/invite/:inviteCode` endpoint in `backend/src/modules/teachers/teachers.controller.ts`
-- [ ] T013 [US2] Implement `POST /api/parents/link-teacher` endpoint and service logic in `backend/src/modules/parents/parents.controller.ts`
-- [ ] T014 [US2] Create RSC landing page `frontend/src/app/(auth)/invite/[code]/page.tsx`
-- [ ] T015 [US2] Implement Server Action to submit the link request in `frontend/src/app/(auth)/invite/[code]/actions.ts`
+- [x] T011 [P] [US2] Create `ParentTeacherLink` model -> `backend/src/modules/parents/entities/parent-teacher-link.entity.ts`
+- [x] T012 [P] [US2] Expose GET `/api/teachers/invite/:inviteCode` endpoint in `teachers.controller.ts`
+- [x] T013 [US2] Implement POST `/api/parents/link-teacher` endpoint and service logic in `parents.controller.ts`
+- [x] T014 [US2] Create RSC landing page `frontend/src/app/(auth)/invite/[code]/page.tsx`
+- [x] T015 [US2] Implement Server Action to submit the link request in `frontend/src/app/(auth)/invite/[code]/actions.ts`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -70,11 +70,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T016 [P] [US3] Ensure `Student` and `StudentTeacherEnrollment` models exist in `backend/src/modules/students/entities/`
-- [ ] T017 [US3] Implement `POST /api/students` endpoint handling creation and multi-enrollment in `backend/src/modules/students/students.controller.ts`
-- [ ] T018 [P] [US3] Create student form component `frontend/src/components/students/StudentForm.tsx` supporting teacher selection
-- [ ] T019 [US3] Create page `frontend/src/app/parent/students/new/page.tsx` with RSC data-fetching of linked teachers
-- [ ] T020 [US3] Implement Server Action for student creation and linking in `frontend/src/app/parent/students/new/actions.ts`
+- [x] T016 [P] [US3] Ensure `Student` and `StudentTeacherEnrollment` models exist in `backend/src/modules/students/entities/`
+- [x] T017 [US3] Implement `POST /api/students` endpoint handling creation and multi-enrollment in `backend/src/modules/students/students.controller.ts`
+- [x] T018 [P] [US3] Create student form component `frontend/src/components/students/StudentForm.tsx` supporting teacher selection
+- [x] T019 [US3] Create page `frontend/src/app/parent/students/new/page.tsx` with RSC data-fetching of linked teachers
+- [x] T020 [US3] Implement Server Action for student creation and linking in `frontend/src/app/parent/students/new/actions.ts`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -84,9 +84,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T021 [P] Extract hardcoded UI strings to support localization if applicable
-- [ ] T022 Code cleanup, formatting, and `pnpm run lint` validation
-- [ ] T023 Run quickstart.md validation to ensure end-to-end flow is completely smooth
+- [x] T021 [P] Extract hardcoded UI strings to support localization if applicable
+- [x] T022 Code cleanup, formatting, and `pnpm run lint` validation
+- [x] T023 Run quickstart.md validation to ensure end-to-end flow is completely smooth
 
 ---
 

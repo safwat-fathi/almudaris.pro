@@ -128,6 +128,8 @@ export async function signupAction(prevState: unknown, formData: FormData) {
 	const phone = formData.get("phone") as string;
 	const email = formData.get("email") as string;
 	const password = formData.get("password") as string;
+	const confirmPassword = formData.get("confirmPassword") as string;
+	const role = (formData.get("role") as string) || "teacher";
 
 	if (!name || !phone || !password) {
 		return {
@@ -137,11 +139,19 @@ export async function signupAction(prevState: unknown, formData: FormData) {
 		};
 	}
 
+	if (password !== confirmPassword) {
+		return {
+			error: "كلمتا المرور غير متطابقتين",
+			requiresOtp: false,
+			phone: undefined,
+		};
+	}
+
 	try {
 		const res = await fetch(`${API_URL}/auth/signup`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ name, phone, email, password, role: "teacher" }),
+			body: JSON.stringify({ name, phone, email: email || undefined, password, role }),
 		});
 
 		if (!res.ok) {
@@ -173,6 +183,7 @@ export async function signupAction(prevState: unknown, formData: FormData) {
 export async function loginAction(prevState: unknown, formData: FormData) {
 	const phone = formData.get("phone") as string;
 	const password = formData.get("password") as string;
+	const selectedRole = formData.get("role") as string; // "teacher" | "parent"
 
 	if (!phone || !password) {
 		return {
@@ -212,6 +223,25 @@ export async function loginAction(prevState: unknown, formData: FormData) {
 
 		const responseData = await res.json();
 		const data = responseData.data;
+		const actualRole: string = data?.user?.role;
+
+		// Validate that the account role matches the selected role on the login UI.
+		// Teacher accounts cannot log in as parent/student and vice versa.
+		const isParentSelection = selectedRole === "parent";
+		const isActuallyParentOrStudent = actualRole === "parent" || actualRole === "student";
+		const roleMismatch =
+			(isParentSelection && actualRole === "teacher") ||
+			(!isParentSelection && isActuallyParentOrStudent);
+
+		if (roleMismatch) {
+			return {
+				error: isParentSelection
+					? "هذا الحساب مسجل كمعلم. يرجى اختيار \"المعلم\" للدخول."
+					: "هذا الحساب مسجل كولي أمر. يرجى اختيار \"الطالب / ولي الأمر\" للدخول.",
+				requiresOtp: false,
+				phone: undefined,
+			};
+		}
 
 		if (data?.access_token) {
 			(await cookies()).set(CONSTANTS.ACCESS_TOKEN, data.access_token, {

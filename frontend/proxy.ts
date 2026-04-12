@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import CONSTANTS from "./lib/constants";
 
-const protectedRoutes = {
-  teacher: [
-    "/students",
-    "/sessions",
-    "/homework",
-    "/payments",
-  ],
-  parent: [
-    "/student-dashboard",
-  ]
-};
+/**
+ * Routes only accessible by teachers (role = "teacher")
+ * Parents/students visiting these will be redirected to /dashboard
+ */
+const teacherOnlyPrefixes = [
+  "/students",   // teacher student management
+  "/sessions",
+  "/homework",
+  "/chat",
+  "/profile",
+];
+
+/**
+ * Routes only accessible by parents/students (role = "parent" | "student")
+ * Teachers visiting these will be redirected to /
+ */
+const studentParentOnlyPrefixes = [
+  "/dashboard",  // parent/student home
+];
 
 const publicRoutes = [
   "/login",
@@ -19,17 +27,11 @@ const publicRoutes = [
   "/verify-otp",
   "/landing",
   "/welcome",
+  "/invite",              // parent invitation landing pages
 ];
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
     "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };
@@ -49,7 +51,7 @@ export async function proxy(request: NextRequest) {
   let token = request.cookies.get(CONSTANTS.ACCESS_TOKEN)?.value;
   const refreshToken = request.cookies.get(CONSTANTS.REFRESH_TOKEN)?.value;
   const path = request.nextUrl.pathname;
-  
+
   const isPublicRoute = publicRoutes.some(r => path.startsWith(r));
 
   let payload = token ? parseJwt(token) : null;
@@ -60,7 +62,7 @@ export async function proxy(request: NextRequest) {
   if (payload && payload.exp) {
     const currentTime = Math.floor(Date.now() / 1000);
     if (payload.exp <= currentTime + 60) {
-      payload = null; // force refresh
+      payload = null;
       token = undefined;
     }
   }
@@ -71,12 +73,12 @@ export async function proxy(request: NextRequest) {
     try {
       const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${refreshToken}` 
+          "Authorization": `Bearer ${refreshToken}`
         }
       });
-      
+
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         if (data.access_token) {
@@ -91,49 +93,50 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Unauthenticated users
   if (!token || !payload) {
     if (isPublicRoute) {
       return NextResponse.next();
     }
-    
     if (path === "/") {
       return NextResponse.redirect(new URL("/landing", request.url));
     }
-    
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const userRole = payload.role; // "teacher" or "parent"
+  const userRole: string = payload.role; // "teacher" | "parent" | "student"
   let response: NextResponse = NextResponse.next();
 
-  // Redirect authenticated users away from public routes
-  if (isPublicRoute) {
+  // Redirect authenticated users away from public routes to their home
+  if (isPublicRoute && !path.startsWith("/invite")) {
     if (userRole === "teacher") {
       response = NextResponse.redirect(new URL("/", request.url));
-    } else if (userRole === "parent") {
-      response = NextResponse.redirect(new URL("/student-dashboard", request.url));
+    } else {
+      // parent or student → their dashboard
+      response = NextResponse.redirect(new URL("/dashboard", request.url));
     }
   } else if (path === "/") {
-    // For root path, parent redirects to their dashboard, teacher stays
-    if (userRole === "parent") {
-      response = NextResponse.redirect(new URL("/student-dashboard", request.url));
+    // Root path is teacher home. Non-teachers go to their dashboard.
+    if (userRole !== "teacher") {
+      response = NextResponse.redirect(new URL("/dashboard", request.url));
     }
   } else {
-    // Role-based route protection
+    // Role-based protection
     if (userRole === "teacher") {
-      const isParentRoute = protectedRoutes.parent.some(r => path.startsWith(r));
-      if (isParentRoute) {
-        response = NextResponse.redirect(new URL("/students", request.url));
+      const isStudentParentOnly = studentParentOnlyPrefixes.some(r => path.startsWith(r));
+      if (isStudentParentOnly) {
+        response = NextResponse.redirect(new URL("/", request.url));
       }
-    } else if (userRole === "parent") {
-      const isTeacherRoute = protectedRoutes.teacher.some(r => path.startsWith(r));
-      if (isTeacherRoute) {
-        response = NextResponse.redirect(new URL("/student-dashboard", request.url));
+    } else {
+      // parent or student role
+      const isTeacherOnly = teacherOnlyPrefixes.some(r => path.startsWith(r));
+      if (isTeacherOnly) {
+        response = NextResponse.redirect(new URL("/dashboard", request.url));
       }
     }
   }
 
-  // If we refreshed tokens, set the new access token in the response cookies
+  // Propagate refreshed tokens
   if (tokensRefreshed && newAccessToken) {
     response.cookies.set(CONSTANTS.ACCESS_TOKEN, newAccessToken, {
       httpOnly: true,

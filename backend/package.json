@@ -31,7 +31,8 @@
     "schema:drop:dev": "pnpm typeorm:dev schema:drop -d src/config/orm.config.ts",
     "schema:drop:prod": "pnpm typeorm:prod schema:drop -d src/config/orm.config.ts",
     "schema:sync:dev": "pnpm typeorm:dev schema:sync -d src/config/orm.config.ts",
-    "schema:sync:prod": "pnpm typeorm:prod schema:sync -d src/config/orm.config.ts"
+    "schema:sync:prod": "pnpm typeorm:prod schema:sync -d src/config/orm.config.ts",
+    "generate:module": "bash -c 'nest g module \"$1\" && nest g controller \"$1\" && nest g service \"$1\"' _"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^3.1.0",

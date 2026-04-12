@@ -30,7 +30,7 @@ This file provides guidelines for AI agents and coding assistants when working w
 - Always add TypeDoc comments to new functions and classes.
 - Always add swagger decorators to all controllers routes and make sure types are correct.
 - Always add @ApiBody() to new routes with typed DTOs.
-- Always add @ApiBearerAuth() to all protected routes.
+- Always add @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN) to all protected routes.
 - Always add Auth Guards to all protected routes.
 - Always use nestjs cli to generate files.
 - Keep changes minimal and targeted to the user’s request.

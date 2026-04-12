@@ -9,9 +9,20 @@
 
 ### Session 2026-04-10
 
+- Q: What is the user experience immediately after a parent logs in via an invitation link? → A: Show an explicit "Accept Invitation" confirmation screen with teacher details
 - Q: Handling "Already Linked" Scenarios → A: Display an explicit "You are already linked to this teacher" message with a button to continue.
 - Q: Wrong Role Access → A: Display an access denied message specifying that the link is for parent accounts.
 - Q: Suspended/Deleted Teacher Accounts → A: Display an error stating "This invitation link is invalid or has expired."
+
+## Post-Implementation Learnings & Experience (UX & Architecture)
+
+- **Unified Navigation Space**: Parents and Students share the exact same UI structure, layout, and core routing space. Fragmenting their routes (e.g., `/(parent)` vs `/(student)`) creates navigation bugs and confusing redirects. They should map to a single unified dashboard route.
+- **Intent-Based Login Validation**: Providing a visual role selector ("Teacher" vs "Student / Parent") on the login page creates a strong user expectation. The system must explicitly validate that the user's actual database role matches their UI selection, and provide clear, localized error messaging if they log in via the wrong portal.
+- **Root Path Semantics**: The root path (`/`) is exclusively the Teacher's domain. Parents and Students must seamlessly be redirected away from it to their respective unified dashboard space to ensure they don't accidentally encounter the Teacher interface.
+- **Native Localization**: Components shared by users (like the Teacher's QR code invitation card) must inherently use the platform's native language (Arabic), right-to-left formatting (`rtl`), and specific design system tokens. Generic or unlocalized placeholder UI immediately damages the user experience.
+- **Stateful Invitation Links**: Invitation processes that cross authentication boundaries (login, OTP, registration) must carry the intent (e.g., the `inviteCode`) forward through the entire process. Storing this via URL parameters (`?inviteCode=...`) ensures the user is seamlessly redirected back to the invitation endpoint (`/invite/[code]`) once authenticated.
+- **Dynamic Role Registration**: Registration components meant to be shared across user types (e.g., `RegistrationForm`) should avoid hardcoding user roles. Extracting the role from query parameters allows a single form to serve both independent teacher signups and parent signups originating from an invitation link.
+- **Context-Aware Error Handling**: When a user attempts to accept an invitation they are already linked to, the UI should not treat this as a hard failure. Instead, it should explicitly acknowledge the existing link ("You are already linked to this teacher") and provide a clear call-to-action to proceed to their dashboard.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -70,11 +81,19 @@ Parents can create student accounts for their children and assign them directly 
 
 - **FR-001**: System MUST provide teachers with a unique, persistent URL and corresponding QR code for parent invitations.
 - **FR-002**: System MUST intercept invitation link access to ensure the user is authenticated as a Parent before completing the link process.
-- **FR-003**: System MUST automatically create a link/association between the Parent and Teacher upon successful completion of the invitation flow.
-- **FR-004**: System MUST allow parents to create new Student accounts (children) under their parent profile.
-- **FR-005**: System MUST allow parents to assign their children (Students) to any Teacher they are currently linked with.
-- **FR-006**: System MUST provide a searchable list of linked teachers for the parent during the student assignment process.
-- **FR-007**: System MUST allow parents to either enroll a previously created student account with the new teacher, or create a brand new student account and enroll them with the teacher during the invitation flow.
+- **FR-003**: System MUST display an explicit "Accept Invitation" confirmation screen showing the teacher's details before finalizing the connection.
+- **FR-004**: System MUST automatically create a link/association between the Parent and Teacher upon successful completion of the invitation flow.
+- **FR-005**: System MUST allow parents to create new Student accounts (children) under their parent profile.
+- **FR-006**: System MUST allow parents to assign their children (Students) to any Teacher they are currently linked with.
+- **FR-007**: System MUST provide a searchable list of linked teachers for the parent during the student assignment process.
+- **FR-008**: System MUST allow parents to either enroll a previously created student account with the new teacher, or create a brand new student account and enroll them with the teacher during the invitation flow.
+- **FR-009**: System MUST provide a unified dashboard routing namespace (e.g. `/dashboard`) shared by both Parents and Students to prevent navigation fragmentation.
+- **FR-010**: System MUST validate that a user's selected role on the login UI matches their actual database role, displaying an explicit localized error upon mismatch.
+- **FR-011**: System MUST enforce strict root path (`/`) semantics for the Teacher role, automatically redirecting logged-in Parents and Students to their unified dashboard.
+- **FR-012**: System MUST ensure all shared user interface components are natively localized in Arabic with right-to-left (`rtl`) text direction and consistent design system tokens.
+- **FR-013**: System MUST persist invitation intent (e.g., `inviteCode`) across authentication boundaries (login, registration, OTP) via URL parameters to ensure seamless redirection back to the invitation acceptance flow upon successful authentication.
+- **FR-014**: System MUST support dynamic role assignment during registration via query parameters to allow shared authentication components to serve both independent teacher signups and parent signups originating from invitations.
+- **FR-015**: System MUST handle "Already Linked" scenarios as a recognized state rather than a generic error, displaying an explicit acknowledgment to the user along with a clear call-to-action to proceed to their dashboard.
 
 ### Key Entities
 

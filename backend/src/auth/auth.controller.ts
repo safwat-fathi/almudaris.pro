@@ -97,7 +97,7 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
-  @ApiBearerAuth()
+  @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiResponse({
     status: 200,
     description: 'Tokens successfully refreshed',
@@ -106,7 +106,10 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized (Invalid or expired refresh token)',
   })
-  async refresh(@Body() body: any, @Headers('authorization') authHeader: string) {
+  async refresh(
+    @Body() body: any,
+    @Headers('authorization') authHeader: string,
+  ) {
     let token = body?.refresh_token;
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];

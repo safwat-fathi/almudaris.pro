@@ -7,6 +7,10 @@ import {
   DeleteDateColumn,
   BeforeInsert,
   BeforeUpdate,
+  ManyToOne,
+  OneToMany,
+  Check,
+  JoinColumn,
 } from 'typeorm';
 import { genSalt, hash } from 'bcrypt';
 import { Exclude } from 'class-transformer';
@@ -14,9 +18,12 @@ import { Exclude } from 'class-transformer';
 export enum UserRole {
   TEACHER = 'teacher',
   PARENT = 'parent',
+  STUDENT = 'student',
 }
 
 @Entity('users')
+@Check(`"invite_code" IS NULL OR "role" = 'teacher'`)
+@Check(`"parent_id" IS NULL OR "role" = 'student'`)
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -39,6 +46,16 @@ export class User {
 
   @Column({ type: 'text', unique: true, nullable: true })
   email?: string;
+
+  @Column({ type: 'text', unique: true, nullable: true })
+  invite_code?: string;
+
+  @ManyToOne(() => User, (user) => user.children, { nullable: true })
+  @JoinColumn({ name: 'parent_id' })
+  parent?: User;
+
+  @OneToMany(() => User, (user) => user.parent)
+  children?: User[];
 
   @Exclude()
   @Column({ type: 'text', select: false })

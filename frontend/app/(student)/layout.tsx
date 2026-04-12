@@ -5,10 +5,10 @@ import { cookies } from "next/headers";
 import CONSTANTS from "@/lib/constants";
 
 const studentNavItems: NavItem[] = [
-  { href: "/student-dashboard", icon: "home", label: "الرئيسية" },
-  { href: "/student-dashboard/homework", icon: "menu_book", label: "الواجبات" },
-  { href: "/student-dashboard/chat", icon: "chat", label: "المحادثة" },
-  { href: "/student-dashboard/payments", icon: "payments", label: "المدفوعات" },
+  { href: "/dashboard", icon: "home", label: "الرئيسية" },
+  { href: "/dashboard/homework", icon: "menu_book", label: "الواجبات" },
+  { href: "/dashboard/chat", icon: "chat", label: "المحادثة" },
+  { href: "/dashboard/payments", icon: "payments", label: "المدفوعات" },
 ];
 
 export default async function StudentLayout({

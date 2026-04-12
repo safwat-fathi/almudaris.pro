@@ -1,51 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useActionState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { UserRole } from "@/types/user";
 import { loginAction } from "@/app/actions/auth.actions";
 
-export default function LoginSelectionPage() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>("teacher");
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("inviteCode");
+  
+  const [selectedRole, setSelectedRole] = useState<UserRole>(inviteCode ? "parent" : "teacher");
   
   const [state, formAction, isPending] = useActionState(loginAction, null);
 
   useEffect(() => {
     if (state?.success) {
-      if (state.role === "teacher") {
+      if (inviteCode) {
+        window.location.href = `/invite/${inviteCode}`;
+      } else if (state.role === "teacher") {
         router.push("/");
       } else {
-        router.push("/student-dashboard");
+        router.push("/dashboard");
       }
     } else if (state?.requiresOtp && state?.phone) {
-      router.push(`/verify-otp?phone=${encodeURIComponent(state.phone)}`);
+      const redirectParams = new URLSearchParams({ phone: state.phone });
+      if (inviteCode) redirectParams.append("inviteCode", inviteCode);
+      router.push(`/verify-otp?${redirectParams.toString()}`);
     }
-  }, [state, router]);
+  }, [state, router, inviteCode]);
 
   return (
-    <div className="flex flex-col items-center w-full min-h-screen pt-4">
-      {/* Brand Header Section */}
-      <header className="w-full max-w-md px-8 pt-12 pb-8 flex flex-col items-center text-center">
-        <div className="mb-6 w-20 h-20 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-          <span
-            className="material-symbols-outlined text-on-primary text-4xl"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            school
-          </span>
-        </div>
-        <h1 className="font-manrope text-3xl font-extrabold tracking-tight text-primary mb-2">
-          Al-Mudaris Pro
-        </h1>
-        <p className="text-on-surface-variant font-medium text-lg leading-relaxed">
-          أهلاً بك في منصة التعليم الذكي
-        </p>
-      </header>
-
-      <main className="w-full max-w-md px-6 flex flex-col gap-10 pb-20 z-10">
+    <>
         {/* Role Selection Strategy: Intentional Asymmetry */}
         <section aria-label="Role Selection">
           <h2 className="font-manrope text-sm font-bold text-outline mb-4 px-2 uppercase tracking-widest">
@@ -142,6 +130,8 @@ export default function LoginSelectionPage() {
             تسجيل الدخول
           </h2>
           <form className="space-y-6" action={formAction}>
+            {/* Hidden role field — tells the server which role the user selected */}
+            <input type="hidden" name="role" value={selectedRole} />
             {state?.error && (
               <div className="bg-error/10 text-error p-3 rounded-lg text-sm font-semibold">
                 {state.error}
@@ -209,13 +199,42 @@ export default function LoginSelectionPage() {
           <p className="text-on-surface-variant font-medium">
             ليس لديك حساب؟{" "}
             <Link
-              href="/register"
+              href={inviteCode ? `/register?role=parent&inviteCode=${inviteCode}` : "/register"}
               className="text-primary font-bold hover:underline mr-1"
             >
               إنشاء حساب جديد
             </Link>
           </p>
         </footer>
+    </>
+  );
+}
+
+export default function LoginSelectionPage() {
+  return (
+    <div className="flex flex-col items-center w-full min-h-screen pt-4">
+      {/* Brand Header Section */}
+      <header className="w-full max-w-md px-8 pt-12 pb-8 flex flex-col items-center text-center">
+        <div className="mb-6 w-20 h-20 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+          <span
+            className="material-symbols-outlined text-on-primary text-4xl"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            school
+          </span>
+        </div>
+        <h1 className="font-manrope text-3xl font-extrabold tracking-tight text-primary mb-2">
+          Al-Mudaris Pro
+        </h1>
+        <p className="text-on-surface-variant font-medium text-lg leading-relaxed">
+          أهلاً بك في منصة التعليم الذكي
+        </p>
+      </header>
+
+      <main className="w-full max-w-md px-6 flex flex-col gap-10 pb-20 z-10">
+        <Suspense fallback={<div className="h-96 animate-pulse bg-surface-container-low rounded-xl w-full"></div>}>
+          <LoginForm />
+        </Suspense>
       </main>
 
       {/* Decorative Element (The Silent Mentor aesthetic) */}

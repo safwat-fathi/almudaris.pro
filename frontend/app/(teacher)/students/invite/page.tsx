@@ -94,7 +94,7 @@ export default function CreateInvitePage() {
             <div className="flex gap-4 p-5 bg-blue-50/50 rounded-xl items-start border border-blue-100 mt-2">
               <span className="material-symbols-outlined text-primary mt-0.5">info</span>
               <p className="text-sm leading-relaxed text-blue-900/80 font-body">
-                بمجرد النقر على "إنشاء رابط الدعوة"، سيتم توليد رابط فريد يمكنك مشاركته مع الطالب عبر الواتساب أو منصات التواصل الاجتماعي.
+                بمجرد النقر على &quot;إنشاء رابط الدعوة&quot;، سيتم توليد رابط فريد يمكنك مشاركته مع الطالب عبر الواتساب أو منصات التواصل الاجتماعي.
               </p>
             </div>
 

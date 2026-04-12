@@ -8,6 +8,9 @@ import { HealthController } from './health/health.controller';
 import { UserRlsInterceptor } from './common/interceptors/user-rls.interceptor';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { TeachersModule } from './teachers/teachers.module';
+import { ParentsModule } from './parents/parents.module';
+import { StudentsModule } from './students/students.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -30,6 +33,9 @@ const ENV = process.env.NODE_ENV;
     ]),
     UsersModule,
     AuthModule,
+    TeachersModule,
+    ParentsModule,
+    StudentsModule,
   ],
   controllers: [HealthController],
   providers: [UserRlsInterceptor],

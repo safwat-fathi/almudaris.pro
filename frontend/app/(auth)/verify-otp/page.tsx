@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import OtpForm from "@/components/auth/OtpForm";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "التحقق من الرمز – Al-Mudaris Pro",
@@ -52,7 +53,9 @@ export default function VerifyOtpPage() {
 				<p className="text-outline mb-10 text-lg">تم إرسال كود على رقمك</p>
 
 				{/* OTP Form (interactive client component) */}
-				<OtpForm />
+				<Suspense fallback={<div className="h-64 animate-pulse bg-surface-container-low rounded-xl w-full"></div>}>
+					<OtpForm />
+				</Suspense>
 
 				{/* Info tip */}
 				<div className="mt-auto pt-12 w-full">
