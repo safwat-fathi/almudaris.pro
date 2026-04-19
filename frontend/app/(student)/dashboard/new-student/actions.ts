@@ -7,7 +7,10 @@ import CONSTANTS from "@/lib/constants";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export async function createStudentAction(formData: FormData) {
+export async function createStudentAction(
+  prevState: { error: string | null },
+  formData: FormData
+) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const teacherId = formData.get("teacherId") as string;

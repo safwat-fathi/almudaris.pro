@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useFormStatus } from "react-dom";
+import React from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,32 +26,32 @@ interface Teacher {
 
 interface StudentFormProps {
   linkedTeachers: Teacher[];
-  action: (formData: FormData) => void;
+  action: (
+    prevState: { error: string | null },
+    formData: FormData
+  ) => Promise<{ error: string | null }>;
 }
 
-export function StudentForm({ linkedTeachers, action }: StudentFormProps) {
-	console.log(linkedTeachers);
-  const [error, setError] = useState<string | null>(null);
+const initialState = {
+  error: null,
+};
 
-  const handleSubmit = async (formData: FormData) => {
-    setError(null);
-    try {
-      await action(formData);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "حدث خطأ غير متوقع");
-    }
-  };
+export function StudentForm({ linkedTeachers, action }: StudentFormProps) {
+  const [state, formAction] = useFormState(action, initialState);
 
   return (
-    <form action={handleSubmit} className="flex flex-col gap-6">
-      {error && (
+    <form action={formAction} className="flex flex-col gap-6">
+      {state?.error && (
         <div className="bg-error/10 text-error p-4 rounded-xl text-sm font-bold">
-          {error}
+          {state.error}
         </div>
       )}
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="name" className="font-body text-sm font-semibold text-on-surface-variant px-1">
+        <label
+          htmlFor="name"
+          className="font-body text-sm font-semibold text-on-surface-variant px-1"
+        >
           اسم الطالب <span className="text-error">*</span>
         </label>
         <div className="relative">
@@ -70,7 +70,10 @@ export function StudentForm({ linkedTeachers, action }: StudentFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="email" className="font-body text-sm font-semibold text-on-surface-variant px-1">
+        <label
+          htmlFor="email"
+          className="font-body text-sm font-semibold text-on-surface-variant px-1"
+        >
           البريد الإلكتروني (اختياري)
         </label>
         <div className="relative">
@@ -89,7 +92,10 @@ export function StudentForm({ linkedTeachers, action }: StudentFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="teacherId" className="font-body text-sm font-semibold text-on-surface-variant px-1">
+        <label
+          htmlFor="teacherId"
+          className="font-body text-sm font-semibold text-on-surface-variant px-1"
+        >
           تعيين إلى المعلم
         </label>
         <div className="relative">

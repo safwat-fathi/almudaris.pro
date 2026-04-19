@@ -34,7 +34,7 @@ export const metadata = {
 
 export default async function NewStudentPage() {
   const linkedTeachers = await getLinkedTeachers();
-	console.log("linkedTeachers::: ",linkedTeachers);
+	
 	
   return (
     <div className="bg-surface text-on-surface min-h-screen flex flex-col pb-28">
