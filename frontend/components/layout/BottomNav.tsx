@@ -12,23 +12,25 @@ export interface NavItem {
 export default function BottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
 
+  const isActive = (path: string) => {
+    // Root-level dashboard paths must match exactly to avoid
+    // /dashboard matching /dashboard/children, /dashboard/payments, etc.
+    const exactMatchPaths = ["/", "/dashboard", "/student-dashboard"];
+    if (exactMatchPaths.includes(path)) {
+      return pathname === path;
+    }
+    return pathname === path || pathname.startsWith(`${path}/`);
+  };
+
   const getLinkClasses = (path: string) => {
-    // Exact match for root paths, startWith for sub-paths (but avoid matching '/' for everything)
-    const isActive = path === "/" || path === "/student-dashboard" 
-      ? pathname === path 
-      : pathname === path || pathname.startsWith(`${path}/`);
-      
-    if (isActive) {
+    if (isActive(path)) {
       return "flex flex-col items-center justify-center bg-primary/10 text-primary rounded-[1.5rem] px-5 py-2 active:scale-95 transition-transform duration-150";
     }
     return "flex flex-col items-center justify-center text-outline-variant px-5 py-2 hover:text-primary active:scale-95 transition-transform duration-150";
   };
 
   const getIconFill = (path: string) => {
-    const isActive = path === "/" || path === "/student-dashboard" 
-      ? pathname === path 
-      : pathname === path || pathname.startsWith(`${path}/`);
-    return isActive ? 1 : 0;
+    return isActive(path) ? 1 : 0;
   };
 
   return (
