@@ -102,7 +102,9 @@ export class AuthService {
 
     // In development, skip sending real OTP – any code will be accepted
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[DEV] Skipping OTP send for ${phone}. Any code will be accepted.`);
+      console.log(
+        `[DEV] Skipping OTP send for ${phone}. Any code will be accepted.`,
+      );
       return;
     }
 

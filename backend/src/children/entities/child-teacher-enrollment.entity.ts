@@ -8,7 +8,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 
 @Entity('student_teacher_enrollments')
-export class StudentTeacherEnrollment {
+export class ChildTeacherEnrollment {
   @PrimaryColumn()
   student_id: number;
 
@@ -17,7 +17,7 @@ export class StudentTeacherEnrollment {
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'student_id' })
-  student: User;
+  child: User;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'teacher_id' })

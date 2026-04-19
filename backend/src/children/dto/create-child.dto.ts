@@ -1,15 +1,15 @@
 import { IsString, IsNotEmpty, IsEmail, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateStudentDto {
-  @ApiProperty({ description: 'The name of the student', example: 'Ahmed Ali' })
+export class CreateChildDto {
+  @ApiProperty({ description: 'The name of the child', example: 'Ahmed Ali' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
   @ApiPropertyOptional({
-    description: 'The email of the student',
-    example: 'ahmed@student.com',
+    description: 'The email of the child',
+    example: 'ahmed@child.com',
   })
   @IsEmail()
   @IsOptional()

@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import React, { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -24,7 +24,7 @@ interface Teacher {
   name: string;
 }
 
-interface StudentFormProps {
+interface ChildFormProps {
   linkedTeachers: Teacher[];
   action: (
     prevState: { error: string | null },
@@ -36,8 +36,8 @@ const initialState = {
   error: null,
 };
 
-export function StudentForm({ linkedTeachers, action }: StudentFormProps) {
-  const [state, formAction] = useFormState(action, initialState);
+export function ChildForm({ linkedTeachers, action }: ChildFormProps) {
+  const [state, formAction] = useActionState(action, initialState);
 
   return (
     <form action={formAction} className="flex flex-col gap-6">

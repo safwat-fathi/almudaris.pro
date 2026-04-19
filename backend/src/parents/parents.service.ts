@@ -69,12 +69,11 @@ export class ParentsService {
       relations: ['teacher'],
     });
 
-    return links.map(link => {
+    return links.map((link) => {
       // Exclude sensitive information
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...teacherData } = link.teacher;
       return teacherData;
     });
-    }
-    }
-
+  }
+}

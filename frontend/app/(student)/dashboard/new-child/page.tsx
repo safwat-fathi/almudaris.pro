@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { StudentForm } from "@/components/students/StudentForm";
-import { createStudentAction } from "./actions";
+import { ChildForm } from "@/components/students/ChildForm";
+import { createChildAction } from "./actions";
 import { cookies } from "next/headers";
 import CONSTANTS from "@/lib/constants";
 
@@ -32,7 +32,7 @@ export const metadata = {
   description: "أضف طالباً جديداً لتسجيله في فصول المعلمين المرتبطين",
 };
 
-export default async function NewStudentPage() {
+export default async function NewChildPage() {
   const linkedTeachers = await getLinkedTeachers();
 	
 	
@@ -63,9 +63,9 @@ export default async function NewStudentPage() {
           </div>
 
           <div className="p-8">
-            <StudentForm
+            <ChildForm
               linkedTeachers={linkedTeachers}
-              action={createStudentAction}
+              action={createChildAction}
             />
           </div>
         </div>
