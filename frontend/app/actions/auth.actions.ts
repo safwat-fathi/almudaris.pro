@@ -85,10 +85,11 @@ export async function verifyOtpAction(prevState: unknown, formData: FormData) {
 			};
 		}
 
-		const data = await res.json();
+		const responseData = await res.json();
+		const data = responseData.data;
 
 		// Store JWT securely (cookies)
-		if (data.access_token) {
+		if (data?.access_token) {
 			(await cookies()).set(CONSTANTS.ACCESS_TOKEN, data.access_token, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === "production",
@@ -98,9 +99,19 @@ export async function verifyOtpAction(prevState: unknown, formData: FormData) {
 			});
 		}
 
-		if (data.refresh_token) {
+		if (data?.refresh_token) {
 			(await cookies()).set(CONSTANTS.REFRESH_TOKEN, data.refresh_token, {
 				httpOnly: true,
+				secure: process.env.NODE_ENV === "production",
+				sameSite: "lax",
+				path: "/",
+				maxAge: CONSTANTS.AUTH_MAX_AGE,
+			});
+		}
+
+		if (data?.user) {
+			(await cookies()).set(CONSTANTS.USER_DATA, JSON.stringify(data.user), {
+				httpOnly: false,
 				secure: process.env.NODE_ENV === "production",
 				sameSite: "lax",
 				path: "/",

@@ -11,6 +11,7 @@ const teacherOnlyPrefixes = [
   "/homework",
   "/chat",
   "/profile",
+  "/welcome",
 ];
 
 /**
@@ -26,7 +27,6 @@ const publicRoutes = [
   "/register",
   "/verify-otp",
   "/landing",
-  "/welcome",
   "/invite",              // parent invitation landing pages
 ];
 

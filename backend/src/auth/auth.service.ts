@@ -100,16 +100,20 @@ export class AuthService {
       throw new BadRequestException('Phone is required');
     }
 
+    // In development, skip sending real OTP – any code will be accepted
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV] Skipping OTP send for ${phone}. Any code will be accepted.`);
+      return;
+    }
+
     const serviceSid = process.env.VERIFY_SERVICE_SID;
     if (!serviceSid) {
-      console.warn('VERIFY_SERVICE_SID is not configured. OTP not sent.');
-      return;
+      throw new BadRequestException('VERIFY_SERVICE_SID is not configured');
     }
 
     const formattedPhone = phone.startsWith('+') ? phone : `+2${phone}`;
 
     try {
-      console.log(`Sending OTP to ${formattedPhone}...`);
       await this.twilioClient.verify.v2
         .services(serviceSid)
         .verifications.create({ to: formattedPhone, channel: 'sms' });
@@ -120,13 +124,15 @@ export class AuthService {
   }
 
   async verifyOtp(phone: string, otpCode: string): Promise<any> {
-    const serviceSid = process.env.VERIFY_SERVICE_SID;
-    if (!serviceSid) {
-      console.warn('VERIFY_SERVICE_SID is not configured. Allowing code 123456 for testing.');
-      if (otpCode !== '123456') {
-        throw new UnauthorizedException('Invalid OTP');
-      }
+    // In development, accept any OTP code
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV] Accepting any OTP code for ${phone}`);
     } else {
+      const serviceSid = process.env.VERIFY_SERVICE_SID;
+      if (!serviceSid) {
+        throw new BadRequestException('VERIFY_SERVICE_SID is not configured');
+      }
+
       const formattedPhone = phone.startsWith('+') ? phone : `+2${phone}`;
 
       try {

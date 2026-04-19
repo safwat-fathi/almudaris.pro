@@ -16,7 +16,12 @@ export default function RegistrationForm() {
   useEffect(() => {
     if (state?.success) {
       if (inviteCode) {
-        window.location.href = `/invite/${inviteCode}`;
+        // Auto accept the invitation then redirect to dashboard
+        import("@/app/(auth)/invite/[code]/actions").then(({ acceptInvitation }) => {
+          acceptInvitation(inviteCode).finally(() => {
+            router.push("/dashboard?inviteAccepted=true");
+          });
+        });
       } else {
         router.push("/");
       }

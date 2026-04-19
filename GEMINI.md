@@ -5,6 +5,7 @@ Auto-generated from all feature plans. Last updated: 2026-04-10
 ## Active Technologies
 
 - TypeScript (Node.js) + NestJS (Backend), Next.js v16 (Frontend, App Router), TailwindCSS, Zustand, Zod, TypeORM/pg (001-groups-management)
+- Nextjs current version (v16.0.3) uses proxy.ts as middleware not middleware.ts
 
 ## Project Structure
 

@@ -28,7 +28,12 @@ export default function OtpForm() {
   useEffect(() => {
 		if (state?.success) {
 			if (inviteCode) {
-				window.location.href = `/invite/${inviteCode}`;
+				// Auto accept the invitation then redirect to dashboard
+				import("@/app/(auth)/invite/[code]/actions").then(({ acceptInvitation }) => {
+					acceptInvitation(inviteCode).finally(() => {
+						router.push("/dashboard?inviteAccepted=true");
+					});
+				});
 			} else if (state.role === "teacher") {
 				router.push("/");
 			} else {

@@ -41,7 +41,7 @@ export default function LandingPage() {
 						</div>
 					</div>
 					<Link
-						href="/welcome"
+						href="/register"
 						className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold hover:scale-105 active:scale-95 transition-all"
 					>
 						إبدأ مجاناً
@@ -63,7 +63,7 @@ export default function LandingPage() {
 						</p>
 						<div className="flex flex-col sm:flex-row-reverse gap-4 justify-start">
 							<Link
-								href="/welcome"
+								href="/register"
 								className="bg-primary text-on-primary px-10 py-4 text-center rounded-lg text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-xl transition-all active:scale-95"
 							>
 								ابدأ مجانًا الآن
@@ -539,7 +539,7 @@ export default function LandingPage() {
 							المدرس برو.
 						</p>
 						<Link
-							href="/welcome"
+							href="/register"
 							className="bg-white text-primary px-12 py-5 rounded-xl text-2xl font-bold hover:scale-105 transition-all shadow-2xl inline-block"
 						>
 							ابدأ مجانًا

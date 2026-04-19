@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { formatCurrency } from "@/lib/format";
 import { cookies } from "next/headers";
 import CONSTANTS from "@/lib/constants";
+import { InviteSuccessToast } from "@/components/students/InviteSuccessToast";
 
 export const metadata: Metadata = {
   title: "لوحة تحكم الطالب",
@@ -26,6 +27,7 @@ export default async function StudentDashboardHome() {
 
   return (
 		<div className="bg-surface text-on-surface antialiased pb-32 min-h-screen">
+      <InviteSuccessToast />
 			<main className="max-w-4xl mx-auto px-6 space-y-10 mt-6">
 				{/* Welcome Section */}
 				<section className="space-y-2 text-right">
