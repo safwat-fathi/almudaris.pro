@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChildForm } from "@/components/students/ChildForm";
+import { ChildForm } from "@/components/children/ChildForm";
 import { createChildAction } from "./actions";
 import { cookies } from "next/headers";
 import CONSTANTS from "@/lib/constants";

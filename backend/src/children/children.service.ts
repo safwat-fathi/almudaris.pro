@@ -65,7 +65,8 @@ export class ChildrenService {
 
     if (duplicate) {
       throw new ConflictException(
-        'A child with the same name and identifier already exists.',
+        // 'A child with the same name and identifier already exists.',
+        'هذا الطالب موجود بالفعل',
       );
     }
 

@@ -6,8 +6,7 @@ import CONSTANTS from "@/lib/constants";
 
 const studentNavItems: NavItem[] = [
   { href: "/dashboard", icon: "home", label: "الرئيسية" },
-  { href: "/dashboard/homework", icon: "menu_book", label: "الواجبات" },
-  { href: "/dashboard/chat", icon: "chat", label: "المحادثة" },
+  { href: "/dashboard/children", icon: "people", label: "الأبناء" },
   { href: "/dashboard/payments", icon: "payments", label: "المدفوعات" },
 ];
 
