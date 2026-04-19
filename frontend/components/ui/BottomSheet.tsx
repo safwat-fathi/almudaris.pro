@@ -4,7 +4,6 @@ import {
   useEffect,
   useRef,
   useCallback,
-  useState,
   ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -18,6 +17,7 @@ interface BottomSheetProps {
 }
 
 const ANIMATION_MS = 320;
+const CUBIC = "cubic-bezier(.4,0,.2,1)";
 
 export function BottomSheet({
   isOpen,
@@ -27,38 +27,61 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
-
-  // Controls whether the portal is mounted at all
-  const [mounted, setMounted] = useState(false);
-  // Controls the CSS class that drives the enter/exit animation
-  const [visible, setVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Drag state (refs to avoid re-renders during gesture) ---
   const dragStartY = useRef(0);
   const currentTranslateY = useRef(0);
   const isDragging = useRef(false);
 
-  // ─── Mount / Unmount lifecycle ───────────────────────────────
+  // ─── Animate open / close via direct DOM manipulation ────────
   useEffect(() => {
+    const container = containerRef.current;
+    const sheet = sheetRef.current;
+    const backdrop = backdropRef.current;
+    if (!container || !sheet || !backdrop) return;
+
+    // Clear any pending close timer
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
     if (isOpen) {
-      setMounted(true);
-      // Allow one frame for the DOM to paint at translateY(100%) before animating in
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setVisible(true));
-      });
+      // Phase 1: show container at starting position (off-screen)
+      sheet.style.transition = "none";
+      backdrop.style.transition = "none";
+      container.style.display = "flex";
+      sheet.style.transform = "translateY(100%)";
+      backdrop.style.opacity = "0";
+
+      // Phase 2: force reflow, then animate in
+      sheet.getBoundingClientRect(); // force layout
+      sheet.style.transition = `transform ${ANIMATION_MS}ms ${CUBIC}`;
+      backdrop.style.transition = `opacity ${ANIMATION_MS}ms ${CUBIC}`;
+      sheet.style.transform = "translateY(0)";
+      backdrop.style.opacity = "1";
+
       document.body.style.overflow = "hidden";
     } else {
-      // Animate out, then unmount
-      setVisible(false);
-      const timer = setTimeout(() => {
-        setMounted(false);
+      // Animate out
+      sheet.style.transition = `transform ${ANIMATION_MS}ms ${CUBIC}`;
+      backdrop.style.transition = `opacity ${ANIMATION_MS}ms ${CUBIC}`;
+      sheet.style.transform = "translateY(100%)";
+      backdrop.style.opacity = "0";
+
+      // Hide container after animation completes
+      closeTimerRef.current = setTimeout(() => {
+        container.style.display = "none";
         document.body.style.overflow = "auto";
       }, ANIMATION_MS);
-      return () => clearTimeout(timer);
     }
 
     return () => {
-      document.body.style.overflow = "auto";
+      if (!isOpen) {
+        document.body.style.overflow = "auto";
+      }
     };
   }, [isOpen]);
 
@@ -75,26 +98,21 @@ export function BottomSheet({
   // ─── Drag-to-dismiss helpers ─────────────────────────────────
   const applyTranslate = useCallback((y: number) => {
     if (!sheetRef.current || !backdropRef.current) return;
-    const clamped = Math.max(0, y); // only allow dragging downward
+    const clamped = Math.max(0, y);
     sheetRef.current.style.transform = `translateY(${clamped}px)`;
-    // Fade backdrop proportionally
     const sheetHeight = sheetRef.current.offsetHeight || 1;
     const opacity = Math.max(0, 1 - clamped / sheetHeight);
     backdropRef.current.style.opacity = String(opacity);
   }, []);
 
-  const handleDragStart = useCallback(
-    (clientY: number) => {
-      if (!sheetRef.current) return;
-      isDragging.current = true;
-      dragStartY.current = clientY;
-      currentTranslateY.current = 0;
-      // Remove transition while dragging for instant feedback
-      sheetRef.current.style.transition = "none";
-      if (backdropRef.current) backdropRef.current.style.transition = "none";
-    },
-    []
-  );
+  const handleDragStart = useCallback((clientY: number) => {
+    if (!sheetRef.current) return;
+    isDragging.current = true;
+    dragStartY.current = clientY;
+    currentTranslateY.current = 0;
+    sheetRef.current.style.transition = "none";
+    if (backdropRef.current) backdropRef.current.style.transition = "none";
+  }, []);
 
   const handleDragMove = useCallback(
     (clientY: number) => {
@@ -109,16 +127,14 @@ export function BottomSheet({
     if (!isDragging.current || !sheetRef.current) return;
     isDragging.current = false;
 
-    // Re-enable transition for the snap / close animation
-    sheetRef.current.style.transition = "";
-    if (backdropRef.current) backdropRef.current.style.transition = "";
+    sheetRef.current.style.transition = `transform ${ANIMATION_MS}ms ${CUBIC}`;
+    if (backdropRef.current)
+      backdropRef.current.style.transition = `opacity ${ANIMATION_MS}ms ${CUBIC}`;
 
     const sheetHeight = sheetRef.current.offsetHeight || 1;
     if (currentTranslateY.current / sheetHeight > closeThreshold) {
-      // Close
       onClose();
     } else {
-      // Snap back
       applyTranslate(0);
     }
     currentTranslateY.current = 0;
@@ -141,18 +157,17 @@ export function BottomSheet({
   const onPointerUp = useCallback(() => handleDragEnd(), [handleDragEnd]);
 
   // ─── Render ──────────────────────────────────────────────────
-  if (!mounted) return null;
-
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-[100] items-end justify-center sm:items-center"
+      style={{ display: "none" }}
+    >
       {/* Backdrop */}
       <div
         ref={backdropRef}
         className="absolute inset-0 bg-on-background/20 backdrop-blur-sm"
-        style={{
-          opacity: visible ? 1 : 0,
-          transition: `opacity ${ANIMATION_MS}ms cubic-bezier(.4,0,.2,1)`,
-        }}
+        style={{ opacity: 0 }}
         onClick={onClose}
       />
 
@@ -160,10 +175,7 @@ export function BottomSheet({
       <div
         ref={sheetRef}
         className="relative w-full max-w-md bg-surface h-[85vh] sm:h-[80vh] sm:rounded-xl rounded-t-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{
-          transform: visible ? "translateY(0)" : "translateY(100%)",
-          transition: `transform ${ANIMATION_MS}ms cubic-bezier(.4,0,.2,1)`,
-        }}
+        style={{ transform: "translateY(100%)" }}
       >
         {/* Drag Handle */}
         <div
