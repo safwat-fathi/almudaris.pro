@@ -62,21 +62,32 @@ export class GroupsController {
   @ApiQuery({ name: 'to', required: false, description: 'End date filter (YYYY-MM-DD)' })
   @ApiQuery({ name: 'status', required: false, enum: GroupStatus })
   @ApiQuery({ name: 'student_id', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'List of groups returned successfully.' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiResponse({ status: 200, description: 'Paginated list of groups returned successfully.' })
   async findAll(
     @Req() req,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('status') status?: GroupStatus,
     @Query('student_id') student_id?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const teacherId = req.user.userId;
-    return this.groupsService.findAll(teacherId, {
-      from,
-      to,
-      status,
-      student_id: student_id ? parseInt(student_id, 10) : undefined,
-    });
+    return this.groupsService.findAll(
+      teacherId,
+      {
+        from,
+        to,
+        status,
+        student_id: student_id ? parseInt(student_id, 10) : undefined,
+      },
+      {
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 10,
+      },
+    );
   }
 
   @Get(':id')

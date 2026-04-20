@@ -6,7 +6,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   UseGuards,
-  Headers,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -98,6 +98,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refresh_token: {
+          type: 'string',
+          description: 'Refresh token. Can also be provided via Authorization Bearer header instead.',
+        },
+      },
+    },
+    required: false,
+  })
   @ApiResponse({
     status: 200,
     description: 'Tokens successfully refreshed',
@@ -107,9 +119,10 @@ export class AuthController {
     description: 'Unauthorized (Invalid or expired refresh token)',
   })
   async refresh(
+    @Req() req,
     @Body() body: any,
-    @Headers('authorization') authHeader: string,
   ) {
+    const authHeader = req.headers['authorization'];
     let token = body?.refresh_token;
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];

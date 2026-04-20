@@ -17,6 +17,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { EditScope } from './dto/update-group.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { GROUPS_CONFIG } from '../config/groups.config';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @Injectable()
 export class GroupsService {
@@ -48,7 +49,7 @@ export class GroupsService {
   async createGroup(
     dto: CreateGroupDto,
     teacherId: number,
-  ): Promise<{ data: Group[]; warnings: string[] }> {
+  ): Promise<{ groups: Group[]; warnings: string[] }> {
     const warnings: string[] = [];
 
     // Validate students belong to this teacher (FR-002)
@@ -156,13 +157,13 @@ export class GroupsService {
       order: { date: 'ASC' },
     });
 
-    return { data: result, warnings };
+    return { groups: result, warnings };
   }
 
   // ==================== US1: List & Get Groups ====================
 
   /**
-   * Lists groups for a teacher with optional filters.
+   * Lists groups for a teacher with optional filters and pagination.
    */
   async findAll(
     teacherId: number,
@@ -172,7 +173,11 @@ export class GroupsService {
       status?: GroupStatus;
       student_id?: number;
     },
-  ): Promise<Group[]> {
+    pagination?: { page: number; limit: number },
+  ): Promise<PaginatedResponseDto<Group>> {
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 10;
+
     const qb = this.groupRepo
       .createQueryBuilder('group')
       .leftJoinAndSelect('group.students', 'gs')
@@ -195,7 +200,20 @@ export class GroupsService {
       });
     }
 
-    return qb.getMany();
+    const total = await qb.getCount();
+
+    const items = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      last_page: Math.ceil(total / limit),
+    };
   }
 
   /**
@@ -224,7 +242,7 @@ export class GroupsService {
     groupId: number,
     dto: UpdateGroupDto,
     teacherId: number,
-  ): Promise<{ data: Group; warnings: string[] }> {
+  ): Promise<{ group: Group; warnings: string[] }> {
     const warnings: string[] = [];
     const group = await this.findOne(groupId, teacherId);
 
@@ -308,7 +326,7 @@ export class GroupsService {
     }
 
     const result = await this.findOne(groupId, teacherId);
-    return { data: result, warnings };
+    return { group: result, warnings };
   }
 
   // ==================== US3: Attendance & Status ====================
