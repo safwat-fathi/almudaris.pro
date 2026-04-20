@@ -14,6 +14,20 @@
 - Q: When applying changes to "This and future groups", what exactly defines the "future groups"? → A: Future groups within the exact same recurring series only.
 - Q: Can a teacher cancel an entire recurring series (or future groups in a series) in a single action? → A: No, cancellations must be done one by one for safety.
 
+### Session 2026-04-20
+- Q: Should `end_time` be a stored field that replaces `duration_minutes`, or stored alongside it? → A: Both `end_time` and `duration_minutes` are stored fields (no replacement).
+- Q: When a teacher edits `start_time` or `duration_minutes`, should `end_time` be auto-recalculated by the backend? → A: Yes, backend auto-recalculates `end_time` from `start_time + duration_minutes`.
+- Q: Should the automatic "Scheduled → Completed" transition use the stored `end_time` column or derive it at runtime? → A: Use stored `end_time` directly (index-friendly queries).
+- Q: When should the `student_name` snapshot in `GroupStudent` be captured? → A: At group creation time only (never updated, even for upcoming groups).
+- Q: If a student is deleted/deactivated, should `GroupStudent` use a hard FK or nullable FK? → A: Hard FK; students are soft-deleted (never physically removed from DB).
+- Q: For `Group.created_by`, is this always the same as `teacher_id`? → A: Yes for now, but kept as a separate field for future audit/admin scenarios.
+- Q: What timezone strategy should the system use for storing and displaying group times? → A: Store all times in UTC; teacher's timezone stored on profile; frontend converts for display.
+- Q: Should the backend validate overlapping groups and how should it communicate warnings? → A: Backend logs overlap + returns a `warnings` field in the API response (non-blocking; creation proceeds).
+- Q: Per-student notes on GroupStudent? → A: Yes, add `note` and `note_updated_at` fields to GroupStudent.
+- Q: Recurring limit of 24 — hardcoded or configurable? → A: Keep 24 for MVP, but design as a configurable constant (not hardcoded everywhere).
+- Q: What defines "future groups" in edit scope? → A: Explicitly defined as groups with `date > current group's date` within the same recurring series.
+- Q: Attendance bulk marking and defaults? → A: Deferred to UX/implementation phase; data model supports it, no spec changes needed.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create a group (Priority: P1)
@@ -95,9 +109,9 @@ As a teacher, I want to cancel a group without permanently deleting it, so that 
 
 ### Edge Cases
 
-- What happens when a student is later removed from a teacher's roster? Past groups containing that student MUST remain unchanged.
+- What happens when a student is later removed from a teacher's roster? Past groups containing that student MUST remain unchanged. Students MUST be soft-deleted (never physically removed from the database) to preserve hard FK integrity in `GroupStudent` records.
 - What happens if a teacher attempts to change the location type of a completed group? The system MUST prevent changing the location type (e.g., Online to Physical) to avoid confusion in historical records, though minor text edits (fixing typos in place names) are allowed.
-- What happens if a teacher creates overlapping groups? The system MUST allow this to support real-life flexibility, but MUST provide a non-blocking warning (e.g., "You already have a group at this time") to prevent accidental double-booking.
+- What happens if a teacher creates overlapping groups? The system MUST allow this to support real-life flexibility, but MUST provide a non-blocking warning on both frontend and backend. The backend MUST log overlap events and return a `warnings` field in the API response for the frontend to display.
 
 ## Requirements *(mandatory)*
 
@@ -106,9 +120,9 @@ As a teacher, I want to cancel a group without permanently deleting it, so that 
 - **FR-001**: System MUST allow teachers to create a group specifying date, time, duration, and student(s).
 - **FR-002**: System MUST restrict a teacher to only assign their own students to a group.
 - **FR-003**: System MUST require individual groups to have exactly one student, and group groups to have at least one student.
-- **FR-004**: System MUST allow teachers to create overlapping groups (no hard restrictions), but MUST present a non-blocking warning when an overlap is detected.
-- **FR-005**: System MUST initialize new groups with a "Scheduled" state and all student attendances set to "Not set", and automatically transition them to "Completed" when their end time passes. The teacher MUST also be able to manually mark a group as "Completed" before its end time.
-- **FR-006**: System MUST generate separate, independent group records when a recurring group is created, up to a strict maximum of 24 instances per series.
+- **FR-004**: System MUST allow teachers to create overlapping groups (no hard restrictions), but MUST present a non-blocking warning when an overlap is detected. The backend MUST also validate overlaps, log them, and return a `warnings` field in the API response (non-blocking; creation still proceeds).
+- **FR-005**: System MUST initialize new groups with a "Scheduled" state and all student attendances set to "Not set", and automatically transition them to "Completed" when the stored `end_time` has passed (using direct column comparison, not runtime derivation). The teacher MUST also be able to manually mark a group as "Completed" before its end time.
+- **FR-006**: System MUST generate separate, independent group records when a recurring group is created, up to a configurable maximum of 24 instances per series (MVP default). The limit MUST be stored as a system configuration constant, not hardcoded across the codebase.
 - **FR-007**: System MUST allow full editing (time, duration, students, location) of "Upcoming" (Scheduled) groups.
 - **FR-008**: System MUST PREVENT editing the time, core structure, and removing students from "Completed" groups (whether automatically marked by time passing or manually marked early by the teacher).
 - **FR-009**: System MUST allow updating attendance and notes for "Completed" groups.
@@ -117,7 +131,13 @@ As a teacher, I want to cancel a group without permanently deleting it, so that 
 - **FR-012**: System MUST require a location type (Online or Physical) for every group.
 - **FR-013**: System MUST require a valid group link if the location type is "Online".
 - **FR-014**: System MUST require a place name if the location type is "Physical".
-- **FR-015**: System MUST provide scope options ("This group only", "This and future groups", "All groups") when editing a recurring group, restricting "future" and "all" strictly to groups within the exact same recurring series, and MUST protect past groups from structural edits even if "All groups" is selected.
+- **FR-015**: System MUST provide scope options ("This group only", "This and future groups", "All groups") when editing a recurring group. "Future groups" is explicitly defined as groups with `date > the edited group's date` within the same `recurring_series_id`. "All groups" applies to all groups in the series, but MUST protect past/completed groups from structural edits.
+- **FR-016**: System MUST auto-recalculate `end_time` on the backend whenever `start_time` or `duration_minutes` is created or updated. The frontend MUST NOT send `end_time` directly; the backend is the single source of truth for this derived-but-stored value.
+- **FR-017**: System MUST snapshot the student's name into `GroupStudent.student_name` at group creation time. This snapshot is immutable and MUST NOT be updated even if the student's profile name changes later, ensuring historical records remain accurate.
+- **FR-018**: System MUST soft-delete students (never physically remove from DB) to preserve hard FK integrity in `GroupStudent`. The `student_name` snapshot provides display-level resilience, while the FK ensures referential integrity.
+- **FR-019**: System MUST store all group times (`start_time`, `end_time`) in UTC. The teacher's timezone MUST be stored on their user profile. The frontend MUST convert UTC to the teacher's local timezone for display.
+- **FR-020**: System MUST support per-student notes on `GroupStudent` via a `note` field (nullable text) and `note_updated_at` timestamp. Notes are editable regardless of group status (same as attendance and group-level notes).
+- **FR-021**: System MUST lock all structural edits (time, duration, students, location type) once a group is marked "Completed" — whether automatically via `end_time` passing or manually by the teacher. Only attendance, group-level notes, and per-student notes remain editable.
 
 ## Success Criteria *(mandatory)*
 
@@ -134,13 +154,10 @@ As a teacher, I want to cancel a group without permanently deleting it, so that 
 - A "Completed" group is determined automatically based on the group's end time passing, but the teacher can also manually mark it complete early.
 - Recurring groups have a reasonable upper limit (e.g., up to 1 year in advance) to prevent infinite record generation.
 - Default location (saved places) is deferred to a future iteration, as specified in the feature description.
+- All times are stored in UTC. The teacher's timezone is stored on their user profile and used by the frontend for display conversion.
 
 ## Key Entities
 
-- **group**: The core teaching event. Contains date, time, duration, title, notes, status (Scheduled, Completed, Cancelled), location_type (Online/Physical), location_link (for online), and location_place (for physical).
-- **groupstudent**: The relationship between a group and a Student. Contains the specific attendance state (Present, Absent, Not set) for that student in that group.
-- **RecurringSeries**: A logical grouping entity that links multiple groups created from a recurring schedule.
-nce state (Present, Absent, Not set) for that student in that group.
-- **RecurringSeries**: A logical grouping entity that links multiple groups created from a recurring schedule.
-n that group.
+- **group**: The core teaching event. Contains date, start_time, end_time, duration_minutes, title, notes, status (Scheduled, Completed, Cancelled), location_type (Online/Physical), location_link (for online), and location_place (for physical).
+- **groupstudent**: The relationship between a group and a Student. Contains the specific attendance state (Present, Absent, Not set) for that student in that group, a `student_name` snapshot captured at creation time for historical preservation, and per-student `note`/`note_updated_at` fields.
 - **RecurringSeries**: A logical grouping entity that links multiple groups created from a recurring schedule.

@@ -1,6 +1,6 @@
 # al-mudaris-pro Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-10
+Auto-generated from all feature plans. Last updated: 2026-04-20
 
 ## Active Technologies
 
@@ -22,6 +22,7 @@ npm test && npm run lint
 TypeScript (Node.js and Next.js): Follow standard conventions
 
 ## Recent Changes
+- 001-groups-invitations-management: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 
 - 002-parent-invitations: Added TypeScript (Node.js and Next.js) + Next.js v16 (App Router), NestJS-style backend, TypeORM (PostgreSQL), Zustand, TailwindCSS, Zod
 
