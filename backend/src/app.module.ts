@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { ParentsModule } from './parents/parents.module';
 import { ChildrenModule } from './children/children.module';
+import { GroupsModule } from './groups/groups.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -36,6 +37,7 @@ const ENV = process.env.NODE_ENV;
     TeachersModule,
     ParentsModule,
     ChildrenModule,
+    GroupsModule,
   ],
   controllers: [HealthController],
   providers: [UserRlsInterceptor],

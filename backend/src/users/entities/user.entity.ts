@@ -50,6 +50,9 @@ export class User {
   @Column({ type: 'text', unique: true, nullable: true })
   invite_code?: string;
 
+  @Column({ type: 'text', nullable: true, default: 'Africa/Cairo' })
+  timezone?: string;
+
   @ManyToOne(() => User, (user) => user.children, { nullable: true })
   @JoinColumn({ name: 'parent_id' })
   parent?: User;
