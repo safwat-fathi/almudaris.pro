@@ -1,5 +1,5 @@
 import React from 'react';
-import { GroupsApi } from '@/services/api/groups';
+import { groupsService } from "@/services/api/groups";
 import { GroupForm } from '@/components/groups/group-form';
 import { AttendanceForm } from '@/components/groups/attendance-form';
 import Link from 'next/link';
@@ -12,7 +12,9 @@ export default async function EditGroupPage({ params }: { params: Promise<{ id: 
   let error = null;
 
   try {
-    group = await GroupsApi.fetchGroup(groupId);
+    const { data } = await groupsService.fetchGroup(groupId);
+		group = data;
+		
   } catch (err: unknown) {
     const errorObj = err as Error;
     error = errorObj.message || "Failed to fetch group details";

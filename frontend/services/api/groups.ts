@@ -98,7 +98,9 @@ class GroupsService extends HTTPService {
 	constructor() {
 		super();
 	}
-	async fetchGroups(params: FetchGroupsParams = {}): Promise<PaginatedGroups> {
+	async fetchGroups(
+		params: FetchGroupsParams = {},
+	): Promise<{ data: PaginatedGroups }> {
 		const query = new URLSearchParams();
 		if (params.from) query.append("from", params.from);
 		if (params.to) query.append("to", params.to);
@@ -110,11 +112,11 @@ class GroupsService extends HTTPService {
 			query.append("limit", params.limit.toString());
 
 		const queryString = query.toString() ? `?${query.toString()}` : "";
-		return this.get<PaginatedGroups>(`/groups${queryString}`);
+		return this.get<{ data: PaginatedGroups }>(`/groups${queryString}`);
 	}
 
-	async fetchGroup(id: number): Promise<Group> {
-		return this.get<Group>(`/groups/${id}`);
+	async fetchGroup(id: number): Promise<{ data: Group }> {
+		return this.get<{ data: Group }>(`/groups/${id}`);
 	}
 
 	async createGroup(data: CreateGroupData): Promise<CreateGroupResponse> {
