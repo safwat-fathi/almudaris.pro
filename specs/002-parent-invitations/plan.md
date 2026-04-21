@@ -1,44 +1,42 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Parent Invitations
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `002-parent-invitations` | **Date**: 2026-04-20 | **Spec**: [specs/002-parent-invitations/spec.md](spec.md)
+**Input**: Feature specification from `/specs/002-parent-invitations/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Implement a parent invitation system where teachers can share a unique link/QR code. Parents use this link to register/login and automatically establish a linked connection with the teacher. Parents can then create student profiles and assign them to any of their linked teachers. The system uses a unified navigation space for parents and students, with stateful intent preserved across authentication boundaries.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript Node.js, Next.js v16 (Frontend), NestJS (Backend)  
+**Primary Dependencies**: React Server Components, Zustand, TailwindCSS, Zod, TypeORM/pg, Swagger  
+**Storage**: PostgreSQL (using `SERIAL` for PKs, `jsonb` for JSON)  
+**Testing**: `pnpm run lint`  
+**Target Platform**: Web (Mobile-first grid, Full Roundness, Arabic-First RTL)  
+**Project Type**: web-service  
+**Performance Goals**: N/A  
+**Constraints**: Strict root path (`/`) semantics for Teacher; Unified `/dashboard` for Parents/Students; Secure server-side session cookies; State intent carried via URL params (`?inviteCode=...`).  
+**Scale/Scope**: N/A
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Simplicity & Zero-Learning Curve**: Avoid fragmentation; use a unified routing space for parents/students.
+- **Action-Driven & Emotional UX**: High-contrast, action-driven colors. Human-centric Arabic language. Arabic-First (RTL) flow.
+- **Modern & Accessible Design System**: Follow "Silent Mentor" (Manrope, `ROUND_FULL`, soft elevation). Native Arabic localization.
+- **Robust & Typed API Architecture (Backend)**: NestJS, Swagger decorators, TypeDoc, `SERIAL` primary keys.
+- **Server-Driven & Secure Frontend**: Next.js App Router, Server Components, Server Actions for forms (Zod + CSRF). Strict separation of `services/api` and `services/bff`. No client-side pages.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+specs/002-parent-invitations/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
@@ -48,51 +46,45 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
 backend/
 ├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
+│   ├── auth/
+│   ├── common/
+│   ├── config/
+│   ├── parents/
+│   ├── students/
+│   ├── teachers/
+│   ├── invitations/
+│   ├── types/
+│   └── users/
 └── tests/
 
 frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+├── app/
+│   ├── (auth)/
+│   ├── dashboard/
+│   ├── invite/
+│   ├── landing/
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── auth/
+│   ├── invite/
+│   ├── layout/
+│   ├── students/
+│   └── ui/
+├── lib/
+│   ├── constants.ts
+│   └── format.ts
+├── services/
+│   ├── api/
+│   └── base/
+└── types/
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Option 2: Web application (Frontend + Backend). The project already uses this split structure. New modules (`invitations`, `dashboard`) will be added to the existing structure.
 
 ## Complexity Tracking
 
@@ -100,5 +92,4 @@ directories captured above]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| N/A | N/A | N/A |

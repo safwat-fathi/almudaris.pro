@@ -8,7 +8,7 @@ import {
   ArrayMinSize,
   IsUrl,
   ValidateIf,
-	IsMilitaryTime,
+  IsMilitaryTime,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { LocationType } from '../entities/group.entity';
@@ -29,7 +29,7 @@ export class UpdateGroupDto {
   @ApiPropertyOptional({ example: '14:00' })
   @IsString()
   @IsOptional()
-	@IsMilitaryTime()
+  @IsMilitaryTime()
   start_time?: string;
 
   @ApiPropertyOptional({ example: 60 })
@@ -51,13 +51,13 @@ export class UpdateGroupDto {
   location_type?: LocationType;
 
   @ApiPropertyOptional({ example: 'https://zoom.us/j/123456' })
-  @ValidateIf((o) => o.location_type === LocationType.ONLINE)
+  @ValidateIf((o: UpdateGroupDto) => o.location_type === LocationType.ONLINE)
   @IsUrl()
   @IsOptional()
   location_link?: string;
 
   @ApiPropertyOptional({ example: 'مركز تعليمي' })
-  @ValidateIf((o) => o.location_type === LocationType.PHYSICAL)
+  @ValidateIf((o: UpdateGroupDto) => o.location_type === LocationType.PHYSICAL)
   @IsString()
   @IsOptional()
   location_place?: string;

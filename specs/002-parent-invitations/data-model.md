@@ -2,45 +2,52 @@
 
 ## Entities
 
-### `Teacher` (Existing, Extended)
-- **Modifications**: Add `inviteCode` field.
-- **Fields**:
-  - `id` (SERIAL, PK)
-  - `userId` (FK to User)
-  - `inviteCode` (varchar, Unique) - A short alphanumeric hash (e.g., `8f7b2a`) auto-generated on Teacher creation.
+### 1. User (Existing, Updated)
+- `id`: SERIAL, Primary Key
+- `role`: Enum ('TEACHER', 'PARENT', 'STUDENT')
+- `name`: VARCHAR
+- `email`: VARCHAR (Nullable)
+- `phone`: VARCHAR (Nullable)
+- `password_hash`: VARCHAR
 
-### `Parent` (Existing)
-- **Fields**:
-  - `id` (SERIAL, PK)
-  - `userId` (FK to User)
+### 2. TeacherProfile (Existing)
+- `id`: SERIAL, Primary Key
+- `user_id`: INTEGER, Foreign Key to User
+- `invite_code`: VARCHAR, Unique (Used for generation of invitation links/QRs)
 
-### `Student` (Existing, Extended)
-- **Fields**:
-  - `id` (SERIAL, PK)
-  - `parentId` (FK to Parent, Not Null) - Represents the parent who created and manages this student.
-  - `firstName` (varchar)
-  - `lastName` (varchar)
+### 3. ParentTeacherLink (New)
+- `id`: SERIAL, Primary Key
+- `parent_id`: INTEGER, Foreign Key to User (Role = PARENT)
+- `teacher_id`: INTEGER, Foreign Key to User (Role = TEACHER)
+- `created_at`: TIMESTAMP
+- **Constraints**: Unique constraint on `(parent_id, teacher_id)`.
 
-### `ParentTeacherLink` (New)
-- **Description**: Join table representing a parent successfully accepting a teacher's invitation connection.
-- **Fields**:
-  - `parentId` (Integer, FK to Parent)
-  - `teacherId` (Integer, FK to Teacher)
-  - `createdAt` (Timestamp)
-- **Constraints**: 
-  - Composite Primary Key (`parentId`, `teacherId`) or Unique Constraint on both.
+### 4. Student (Child) Profile (Updated/Clarified)
+- `id`: SERIAL, Primary Key
+- `parent_id`: INTEGER, Foreign Key to User (Role = PARENT). Defines the parent-child relationship.
+- `user_id`: INTEGER, Foreign Key to User (Role = STUDENT). The actual login account for the student, if applicable.
+- `name`: VARCHAR
 
-### `StudentTeacherEnrollment` (Existing or New)
-- **Description**: Connects a specific student to a specific teacher for learning sessions.
-- **Fields**:
-  - `studentId` (Integer, FK to Student)
-  - `teacherId` (Integer, FK to Teacher)
-  - `createdAt` (Timestamp)
-- **Constraints**:
-  - Composite Primary Key on (`studentId`, `teacherId`).
+### 5. StudentTeacherEnrollment (Existing/Updated)
+- `id`: SERIAL, Primary Key
+- `student_id`: INTEGER, Foreign Key to Student Profile
+- `teacher_id`: INTEGER, Foreign Key to User (Role = TEACHER)
+- `created_at`: TIMESTAMP
+- **Constraints**: Unique constraint on `(student_id, teacher_id)`.
 
-## State Transitions & Validation Rules
+## State Transitions
 
-- **Linking Validation**: An `inviteCode` provided in the path parameter must resolve to an active Teacher. If the Teacher is inactive or deleted, return a standard "Invalid or Expired Link" error.
-- **Role Validation**: Only a `Parent` role user can insert into `ParentTeacherLink`.
-- **Enrollment Validation**: A Parent attempting to create a `StudentTeacherEnrollment` must already have a valid `ParentTeacherLink` with that specific `teacherId`.
+- **Invitation Acceptance**:
+  - `Parent` accesses `/invite/[inviteCode]`
+  - System looks up `TeacherProfile` using `inviteCode`.
+  - If Parent is not logged in -> redirect to login/register with `?inviteCode=...`
+  - Upon successful login/registration -> redirect back to `/invite/[inviteCode]`
+  - Parent confirms acceptance.
+  - System creates `ParentTeacherLink` record.
+  - If `ParentTeacherLink` already exists, show "Already Linked" message.
+
+- **Student Assignment**:
+  - `Parent` adds a new student via the dashboard.
+  - Parent selects a `Teacher` from the list of teachers associated via `ParentTeacherLink`.
+  - System creates a new `Student` record linked to the `Parent`.
+  - System creates a `StudentTeacherEnrollment` record linking the new `Student` to the selected `Teacher`.

@@ -56,13 +56,13 @@
 - [x] T013 [US1] Implement `POST /groups` endpoint in `backend/src/groups/groups.controller.ts` — Use `@Post()`, `@Body() CreateGroupDto`, extract authenticated user from request. Call `groupsService.createGroup()`. Return `201 Created` with `{ data, warnings }`. Add Swagger decorators.
 - [x] T014 [US1] Implement `GET /groups` endpoint in `backend/src/groups/groups.controller.ts` — Use `@Get()`, accept query params: `from`, `to` (date range), `status`, `student_id`. Filter by `teacher_id = authenticated user`. Return groups with nested `students` array (student_name, attendance_status, note). All times in UTC. Add Swagger decorators.
 - [x] T015 [US1] Implement `GET /groups/:id` endpoint in `backend/src/groups/groups.controller.ts` — Use `@Get(':id')`, validate group belongs to teacher. Return single group with full student details. Add Swagger decorators.
-- [ ] T016 [P] [US1] Create API client functions in `frontend/services/api/groups.ts` — Functions: `fetchGroups(params)`, `fetchGroup(id)`, `createGroup(data)`. All calls go through the BFF layer.
-- [ ] T017 [P] [US1] Create Server Actions in `frontend/services/bff/groups.ts` — Server Actions: `createGroupAction(formData)` with Zod validation and CSRF token. Calls backend API. Returns `{ data, warnings }`.
-- [ ] T018 [US1] Create group form component in `frontend/components/groups/group-form.tsx` — Client component with fields: date, start_time, duration_minutes, student selector (multi-select from teacher's students), location_type toggle (Online/Physical), conditional location_link/location_place, title, recurring toggle + pattern + count. Convert UTC display using teacher's timezone from profile. Submit via Server Action.
-- [ ] T019 [P] [US1] Create overlap warning component in `frontend/components/groups/overlap-warning.tsx` — Display non-blocking warning toast/banner when `warnings` array is non-empty in API response.
-- [ ] T020 [US1] Create group list page in `frontend/app/(teacher)/groups/page.tsx` — Server Component. Fetch groups via BFF. Display as cards/list with date, time (converted from UTC), students, status, location. Filter by upcoming/completed/cancelled.
-- [ ] T021 [P] [US1] Create group card component in `frontend/components/groups/group-card.tsx` — Display group summary: title, date, time (UTC→local), duration, student count, status badge, location icon.
-- [ ] T022 [US1] Create new group page in `frontend/app/(teacher)/groups/new/page.tsx` — Server Component wrapping `group-form.tsx`. Pass teacher's students list from server.
+- [x] T016 [P] [US1] Create API client functions in `frontend/services/api/groups.ts` — Functions: `fetchGroups(params)`, `fetchGroup(id)`, `createGroup(data)`. All calls go through the BFF layer.
+- [x] T017 [P] [US1] Create Server Actions in `frontend/actions/groups.actions.ts` — Server Actions: `createGroupAction(formData)` with Zod validation and CSRF token. Calls backend API. Returns `{ data, warnings }`.
+- [x] T018 [US1] Create group form component in `frontend/components/groups/group-form.tsx` — Client component with fields: date, start_time, duration_minutes, student selector (multi-select from teacher's students), location_type toggle (Online/Physical), conditional location_link/location_place, title, recurring toggle + pattern + count. Convert UTC display using teacher's timezone from profile. Submit via Server Action.
+- [x] T019 [P] [US1] Create overlap warning component in `frontend/components/groups/overlap-warning.tsx` — Display non-blocking warning toast/banner when `warnings` array is non-empty in API response.
+- [x] T020 [US1] Create group list page in `frontend/app/(teacher)/groups/page.tsx` — Server Component. Fetch groups via BFF. Display as cards/list with date, time (converted from UTC), students, status, location. Filter by upcoming/completed/cancelled.
+- [x] T021 [P] [US1] Create group card component in `frontend/components/groups/group-card.tsx` — Display group summary: title, date, time (UTC→local), duration, student count, status badge, location icon.
+- [x] T022 [US1] Create new group page in `frontend/app/(teacher)/groups/new/page.tsx` — Server Component wrapping `group-form.tsx`. Pass teacher's students list from server.
 
 **Checkpoint**: User Story 1 complete. Teachers can create single and recurring groups, see overlap warnings, and view their group list. All times display in teacher's timezone.
 
@@ -78,9 +78,9 @@
 
 - [x] T023 [US2] Implement `updateGroup()` in `backend/src/groups/groups.service.ts` — Accept group ID, `UpdateGroupDto`, authenticated teacher. Logic: verify group is 'Scheduled' (reject if Completed/Cancelled per FR-008/FR-021), validate ownership, recompute `end_time` if `start_time`/`duration_minutes` changed (FR-016), check overlaps and build warnings, snapshot new `student_name` for any newly added students (FR-017). Handle `edit_scope`: THIS (single group), THIS_AND_FUTURE (groups with `date > this group's date` in same `recurring_series_id`, skip completed ones), ALL (all in series, skip completed). Return `{ data, warnings }`.
 - [x] T024 [US2] Implement `PUT /groups/:id` endpoint in `backend/src/groups/groups.controller.ts` — Use `@Put(':id')`, `@Body() UpdateGroupDto`. Call `groupsService.updateGroup()`. Return `200 OK` with `{ data, warnings }`. Add Swagger decorators.
-- [ ] T025 [P] [US2] Add `updateGroupAction(id, formData)` Server Action in `frontend/services/bff/groups.ts` — Zod validation + CSRF. Calls backend PUT endpoint.
-- [ ] T026 [P] [US2] Create recurring edit options component in `frontend/components/groups/recurring-options.tsx` — Modal/dialog presenting "This group only", "This and future groups", "All groups" scope selection. Only shown when editing a group with `recurring_series_id`.
-- [ ] T027 [US2] Create group detail/edit page in `frontend/app/(teacher)/groups/[id]/page.tsx` — Server Component. Fetch group details. Show editable form if status='Scheduled' (pre-fill `group-form.tsx`), read-only view if Completed/Cancelled. Include recurring scope options if applicable.
+- [x] T025 [P] [US2] Add `updateGroupAction(id, formData)` Server Action in `frontend/actions/groups.actions.ts` — Zod validation + CSRF. Calls backend PUT endpoint.
+- [x] T026 [P] [US2] Create recurring edit options component in `frontend/components/groups/recurring-options.tsx` — Modal/dialog presenting "This group only", "This and future groups", "All groups" scope selection. Only shown when editing a group with `recurring_series_id`.
+- [x] T027 [US2] Create group detail/edit page in `frontend/app/(teacher)/groups/[id]/page.tsx` — Server Component. Fetch group details. Show editable form if status='Scheduled' (pre-fill `group-form.tsx`), read-only view if Completed/Cancelled. Include recurring scope options if applicable.
 
 **Checkpoint**: User Stories 1 & 2 complete. Teachers can create and edit groups with full recurring series support.
 
@@ -97,9 +97,9 @@
 - [x] T028 [US3] Implement `updateAttendance()` in `backend/src/groups/groups.service.ts` — Accept group ID, `UpdateAttendanceDto`, authenticated teacher. Logic: verify ownership, update `Group.notes` if provided, update each `GroupStudent.attendance_status` and `GroupStudent.note` (set `note_updated_at` to now if note changed). Allowed regardless of status (FR-009/FR-020). Return updated group.
 - [x] T029 [US3] Implement `updateStatus()` in `backend/src/groups/groups.service.ts` — Accept group ID, `UpdateStatusDto`, authenticated teacher. Logic: verify ownership, verify current status is 'Scheduled', transition to 'Completed' (FR-005). Return updated group.
 - [x] T030 [US3] Implement `PATCH /groups/:id/attendance` and `PATCH /groups/:id/status` endpoints in `backend/src/groups/groups.controller.ts` — Add both PATCH routes with appropriate DTOs. Add Swagger decorators.
-- [ ] T031 [P] [US3] Add `updateAttendanceAction(id, formData)` and `markCompleteAction(id)` Server Actions in `frontend/services/bff/groups.ts`.
-- [ ] T032 [US3] Create attendance form component in `frontend/components/groups/attendance-form.tsx` — Client component listing all students in the group with: student_name display, attendance status toggle (Present/Absent/Not set), per-student note textarea, group-level notes textarea. Submit via Server Action.
-- [ ] T033 [US3] Integrate attendance form into group detail page `frontend/app/(teacher)/groups/[id]/page.tsx` — Show attendance form for Completed groups (or Scheduled groups for early marking). Show "Mark Complete" button for Scheduled groups. Enforce read-only structural fields for Completed groups.
+- [x] T031 [P] [US3] Add `updateAttendanceAction(id, formData)` and `markCompleteAction(id)` Server Actions in `frontend/actions/groups.actions.ts`.
+- [x] T032 [US3] Create attendance form component in `frontend/components/groups/attendance-form.tsx` — Client component listing all students in the group with: student_name display, attendance status toggle (Present/Absent/Not set), per-student note textarea, group-level notes textarea. Submit via Server Action.
+- [x] T033 [US3] Integrate attendance form into group detail page `frontend/app/(teacher)/groups/[id]/page.tsx` — Show attendance form for Completed groups (or Scheduled groups for early marking). Show "Mark Complete" button for Scheduled groups. Enforce read-only structural fields for Completed groups.
 
 **Checkpoint**: User Stories 1, 2 & 3 complete. Full create → edit → complete → record attendance workflow functional.
 
@@ -115,8 +115,8 @@
 
 - [x] T034 [US5] Implement `cancelGroup()` in `backend/src/groups/groups.service.ts` — Accept group ID, authenticated teacher. Logic: verify ownership, set status='Cancelled' (FR-010). Individual only — no bulk cancellation. Return `204 No Content`.
 - [x] T035 [US5] Implement `DELETE /groups/:id` endpoint in `backend/src/groups/groups.controller.ts` — Use `@Delete(':id')`. Call `groupsService.cancelGroup()`. Return `204 No Content`. Add Swagger decorators.
-- [ ] T036 [P] [US5] Add `cancelGroupAction(id)` Server Action in `frontend/services/bff/groups.ts`.
-- [ ] T037 [US5] Add cancel button and confirmation dialog to group detail page `frontend/app/(teacher)/groups/[id]/page.tsx` — Show cancel button for Scheduled groups only. Confirmation dialog warns action cannot be undone. On confirm, call Server Action and redirect to group list.
+- [x] T036 [P] [US5] Add `cancelGroupAction(id)` Server Action in `frontend/actions/groups.actions.ts`.
+- [x] T037 [US5] Add cancel button and confirmation dialog to group detail page `frontend/app/(teacher)/groups/[id]/page.tsx` — Show cancel button for Scheduled groups only. Confirmation dialog warns action cannot be undone. On confirm, call Server Action and redirect to group list.
 
 **Checkpoint**: All user stories complete. Full CRUD lifecycle functional.
 
@@ -126,10 +126,10 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T038 Run `pnpm -C backend run lint` and fix any linting errors across all groups module files
-- [ ] T039 [P] Run `pnpm -C frontend run lint` and fix any linting errors across all groups frontend files
-- [ ] T040 [P] Add Swagger API documentation review — verify all 7 endpoints have complete request/response schemas with examples
-- [ ] T041 Validate quickstart.md workflows manually — create group, edit, mark complete, record attendance, cancel. Verify all flows work end-to-end with correct timezone conversion.
+- [x] T038 Run `pnpm -C backend run lint` and fix any linting errors across all groups module files
+- [x] T039 [P] Run `pnpm -C frontend run lint` and fix any linting errors across all groups frontend files
+- [x] T040 [P] Add Swagger API documentation review — verify all 7 endpoints have complete request/response schemas with examples
+- [x] T041 Validate quickstart.md workflows manually — create group, edit, mark complete, record attendance, cancel. Verify all flows work end-to-end with correct timezone conversion.
 
 ---
 
@@ -154,14 +154,14 @@
 
 ### Within Each User Story
 
-- Backend service → Backend controller → Frontend API/BFF → Frontend components → Frontend pages
+- Backend service → Backend controller → Frontend API/Actions → Frontend components → Frontend pages
 - [P] marked tasks can run in parallel within that phase
 
 ### Parallel Opportunities
 
 - Phase 1: T002 and T003 can run in parallel
 - Phase 2: T004, T005, T006 (entities) can run in parallel; T007, T008, T009, T010 (DTOs) can run in parallel
-- Phase 3 (US1): T016+T017 (frontend API/BFF) can run in parallel; T019+T021 (components) can run in parallel
+- Phase 3 (US1): T016+T017 (frontend API/Actions) can run in parallel; T019+T021 (components) can run in parallel
 - Phase 4 (US2): T025+T026 can run in parallel
 - Phase 6 (US5): T036 can run in parallel with T037
 - Phase 7: T038, T039, T040 can all run in parallel
@@ -175,7 +175,7 @@
 
 # Launch frontend API + BFF in parallel:
 Task T016: "Create API client functions in frontend/services/api/groups.ts"
-Task T017: "Create Server Actions in frontend/services/bff/groups.ts"
+Task T017: "Create Server Actions in frontend/actions/groups.actions.ts"
 
 # Launch independent components in parallel:
 Task T019: "Create overlap warning component in frontend/components/groups/overlap-warning.tsx"

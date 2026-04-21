@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-	BeforeUpdate,
-	BeforeInsert,
-} from 'typeorm';
+import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Group } from './group.entity';
@@ -56,5 +48,4 @@ export class GroupStudent extends BaseEntity {
   /** Auto-set when note is created or updated */
   @Column({ type: 'timestamptz', nullable: true })
   note_updated_at?: Date;
-
 }

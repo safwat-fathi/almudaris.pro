@@ -1,16 +1,23 @@
-# Research: Parent Invitations
+# Research & Technical Decisions: Parent Invitations
 
-## Invitation Link Uniqueness & Generation
-- **Decision**: Use an `inviteCode` (e.g., a short alphanumeric string or UUID) directly on the `Teacher` entity, generating a persistent URL (e.g. `/invite/{inviteCode}`).
-- **Rationale**: A persistent QR code or link is easiest for the teacher to print, screenshot, or send repeatedly. The specification implies the link uniquely identifies the teacher, not necessarily the specific invocation.
-- **Alternatives considered**: Generating one-time-use tokens per invitation. Rejected because it would require the teacher to explicitly generate a new link for every individual parent interactively, breaking the "share his invitation link (QR code)" requirement which is heavily biased towards a reusable credential.
+## Technical Context Unknowns Resolved
 
-## Parent to Teacher Relationship
-- **Decision**: Introduce a `ParentTeacherLink` join table.
-- **Rationale**: A parent can have multiple students across multiple teachers. Establishing a concrete relationship between Parent and Teacher restricts search and enforces authorization boundaries (e.g., parents can only see/message linked teachers, and assign students to linked teachers).
-- **Alternatives considered**: Inferring relationship dynamically through student enrollment. Rejected because the parent needs to link to the teacher *before* creating a student, as per the explicit workflow in the specification.
+1. **Unified Navigation Space**:
+   - **Decision**: Use a single `/dashboard` route for both Parents and Students.
+   - **Rationale**: Fragmenting routes (`/(parent)` vs `/(student)`) creates navigation bugs. A unified space simplifies routing and avoids confusing redirects.
+   - **Alternatives considered**: Separate route groups. Rejected due to complexity in sharing UI components and handling multi-role users.
 
-## Registration/Authentication Handshake
-- **Decision**: Use Next.js Middleware or an RSC wrapper at `/invite/[code]` that validates authentication. If unauthenticated, redirect to `/login?callbackUrl=/invite/[code]`.
-- **Rationale**: Follows standard modern auth paradigms. The user logs in and gets seamlessly returned to complete the link process.
-- **Alternatives considered**: Having a customized registration page specifically for invitations. Rejected to maintain DRY auth flows and simplicity matching the constitution.
+2. **Stateful Invitation Links**:
+   - **Decision**: Store `inviteCode` in URL parameters (`?inviteCode=...`) throughout the authentication and registration flow.
+   - **Rationale**: Ensures the user's intent is carried forward across authentication boundaries (login, OTP, registration) so they can be seamlessly redirected back to the invitation endpoint (`/invite/[code]`).
+   - **Alternatives considered**: Storing in local storage or session cookies. Rejected because URL parameters are more transparent, shareable, and less prone to state mismatch issues if the user opens multiple tabs.
+
+3. **Dynamic Role Registration**:
+   - **Decision**: Extract the user role from query parameters to allow a single `RegistrationForm` component.
+   - **Rationale**: Avoids duplicating the registration form for independent teacher signups vs parent signups originating from an invitation link.
+   - **Alternatives considered**: Hardcoding roles in separate components. Rejected due to code duplication and maintenance overhead.
+
+4. **Already Linked Scenarios**:
+   - **Decision**: Treat as a recognized state, not a hard error. Display an explicit "You are already linked to this teacher" message with a CTA to proceed to the dashboard.
+   - **Rationale**: Provides a better user experience than a generic error message, acknowledging the existing relationship.
+   - **Alternatives considered**: Redirecting silently or showing a standard error page. Rejected because it causes confusion.

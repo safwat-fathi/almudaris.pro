@@ -1,6 +1,6 @@
 # Feature Specification: groups Management
 
-**Feature Branch**: `[01-groups-management]`  
+**Feature Branch**: `[001-groups-management]`  
 **Created**: 2026-04-10  
 **Status**: Draft  
 **Input**: User description: "I want to build groups feature # 🧠 groups — Business Logic..."
@@ -15,6 +15,7 @@
 - Q: Can a teacher cancel an entire recurring series (or future groups in a series) in a single action? → A: No, cancellations must be done one by one for safety.
 
 ### Session 2026-04-20
+- Q: Are "individual" and "group" groups distinct DB record types or just logical terms? → A: Logical terms only, inferred from the student count.
 - Q: Should `end_time` be a stored field that replaces `duration_minutes`, or stored alongside it? → A: Both `end_time` and `duration_minutes` are stored fields (no replacement).
 - Q: When a teacher edits `start_time` or `duration_minutes`, should `end_time` be auto-recalculated by the backend? → A: Yes, backend auto-recalculates `end_time` from `start_time + duration_minutes`.
 - Q: Should the automatic "Scheduled → Completed" transition use the stored `end_time` column or derive it at runtime? → A: Use stored `end_time` directly (index-friendly queries).

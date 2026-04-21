@@ -104,7 +104,8 @@ export class AuthController {
       properties: {
         refresh_token: {
           type: 'string',
-          description: 'Refresh token. Can also be provided via Authorization Bearer header instead.',
+          description:
+            'Refresh token. Can also be provided via Authorization Bearer header instead.',
         },
       },
     },
@@ -118,10 +119,7 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized (Invalid or expired refresh token)',
   })
-  async refresh(
-    @Req() req,
-    @Body() body: any,
-  ) {
+  async refresh(@Req() req, @Body() body: any) {
     const authHeader = req.headers['authorization'];
     let token = body?.refresh_token;
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {

@@ -6,9 +6,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan, MoreThan, Not } from 'typeorm';
-import { Group, GroupStatus, LocationType } from './entities/group.entity';
-import { GroupStudent, AttendanceStatus } from './entities/group-student.entity';
+import { Repository, In } from 'typeorm';
+import { Group, GroupStatus } from './entities/group.entity';
+import {
+  GroupStudent,
+  AttendanceStatus,
+} from './entities/group-student.entity';
 import { RecurringSeries } from './entities/recurring-series.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
@@ -375,10 +378,7 @@ export class GroupsService {
   /**
    * Manually marks a group as Completed (FR-005).
    */
-  async updateStatus(
-    groupId: number,
-    teacherId: number,
-  ): Promise<Group> {
+  async updateStatus(groupId: number, teacherId: number): Promise<Group> {
     const group = await this.findOne(groupId, teacherId);
 
     if (group.status !== GroupStatus.SCHEDULED) {
@@ -436,10 +436,10 @@ export class GroupsService {
         .andWhere('g.status != :cancelled', {
           cancelled: GroupStatus.CANCELLED,
         })
-        .andWhere(
-          '(g.start_time < :endTime AND g.end_time > :startTime)',
-          { startTime, endTime },
-        );
+        .andWhere('(g.start_time < :endTime AND g.end_time > :startTime)', {
+          startTime,
+          endTime,
+        });
 
       if (excludeGroupId) {
         qb.andWhere('g.id != :excludeId', { excludeId: excludeGroupId });
@@ -448,9 +448,7 @@ export class GroupsService {
       const overlapping = await qb.getCount();
 
       if (overlapping > 0) {
-        warnings.push(
-          `You already have a group at this time on ${date}`,
-        );
+        warnings.push(`You already have a group at this time on ${date}`);
       }
     }
 

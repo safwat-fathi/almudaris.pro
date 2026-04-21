@@ -8,150 +8,170 @@ export interface RequestOptions extends RequestInit {
 }
 
 export class HTTPService {
-  protected static async getAccessToken(): Promise<string | undefined> {
-    const cookieStore = await cookies();
-    return cookieStore.get(CONSTANTS.ACCESS_TOKEN)?.value;
-  }
+	private async getAccessToken(): Promise<string | undefined> {
+		const cookieStore = await cookies();
+		return cookieStore.get(CONSTANTS.ACCESS_TOKEN)?.value;
+	}
 
-  protected static async getRefreshToken(): Promise<string | undefined> {
-    const cookieStore = await cookies();
-    return cookieStore.get(CONSTANTS.REFRESH_TOKEN)?.value;
-  }
+	private async getRefreshToken(): Promise<string | undefined> {
+		const cookieStore = await cookies();
+		return cookieStore.get(CONSTANTS.REFRESH_TOKEN)?.value;
+	}
 
-  protected static async refreshAccessToken(): Promise<string | null> {
-    const refreshToken = await this.getRefreshToken();
-    if (!refreshToken) return null;
+	private async refreshAccessToken(): Promise<string | null> {
+		const refreshToken = await this.getRefreshToken();
+		if (!refreshToken) return null;
 
-    try {
-      const response = await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${refreshToken}`
-        },
-      });
+		try {
+			const response = await fetch(`${API_URL}/auth/refresh`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${refreshToken}`,
+				},
+			});
 
-      if (!response.ok) {
-        return null;
-      }
+			if (!response.ok) {
+				return null;
+			}
 
-      const data = await response.json();
-      
-      if (data.access_token) {
-        // Attempt to update cookies. This works in Server Actions or Route Handlers,
-        // but will silently fail in Server Components during rendering.
-        try {
-          const cookieStore = await cookies();
-          cookieStore.set(CONSTANTS.ACCESS_TOKEN, data.access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-            maxAge: CONSTANTS.AUTH_MAX_AGE,
-          });
-          
-          if (data.refresh_token) {
-             cookieStore.set(CONSTANTS.REFRESH_TOKEN, data.refresh_token, {
-               httpOnly: true,
-               secure: process.env.NODE_ENV === "production",
-               sameSite: "lax",
-               path: "/",
-               maxAge: CONSTANTS.AUTH_MAX_AGE,
-             });
-          }
-        } catch {
-           // Expected to fail if called during Server Component render phase.
-        }
-        
-        return data.access_token;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
+			const data = await response.json();
 
-  public static async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { requireAuth = true, ...customOptions } = options;
-    
-    const headers = new Headers(customOptions.headers);
-    if (!headers.has("Content-Type") && !(customOptions.body instanceof FormData)) {
-      headers.set("Content-Type", "application/json");
-    }
+			if (data.access_token) {
+				// Attempt to update cookies. This works in Server Actions or Route Handlers,
+				// but will silently fail in Server Components during rendering.
+				try {
+					const cookieStore = await cookies();
+					cookieStore.set(CONSTANTS.ACCESS_TOKEN, data.access_token, {
+						httpOnly: true,
+						secure: process.env.NODE_ENV === "production",
+						sameSite: "lax",
+						path: "/",
+						maxAge: CONSTANTS.AUTH_MAX_AGE,
+					});
 
-    if (requireAuth) {
-      const token = await this.getAccessToken();
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-    }
+					if (data.refresh_token) {
+						cookieStore.set(CONSTANTS.REFRESH_TOKEN, data.refresh_token, {
+							httpOnly: true,
+							secure: process.env.NODE_ENV === "production",
+							sameSite: "lax",
+							path: "/",
+							maxAge: CONSTANTS.AUTH_MAX_AGE,
+						});
+					}
+				} catch {
+					// Expected to fail if called during Server Component render phase.
+				}
 
-    let response = await fetch(`${API_URL}${endpoint}`, {
-      ...customOptions,
-      headers,
-    });
+				return data.access_token;
+			}
+			return null;
+		} catch {
+			return null;
+		}
+	}
 
-    // 401 Unauthorized -> Attempt to refresh token and retry
-    if (response.status === 401 && requireAuth) {
-      const newToken = await this.refreshAccessToken();
-      if (newToken) {
-        // Retry with new token
-        headers.set("Authorization", `Bearer ${newToken}`);
-        response = await fetch(`${API_URL}${endpoint}`, {
-          ...customOptions,
-          headers,
-        });
-      }
-    }
+	protected async request<T>(
+		endpoint: string,
+		options: RequestOptions = {},
+	): Promise<T> {
+		const { requireAuth = true, ...customOptions } = options;
 
-    if (!response.ok) {
-      // Extract specific error details if possible
-      let errorMessage = "Request failed";
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-      
-      const error = new Error(errorMessage) as Error & { status: number };
-      error.status = response.status;
-      throw error;
-    }
+		const headers = new Headers(customOptions.headers);
+		if (
+			!headers.has("Content-Type") &&
+			!(customOptions.body instanceof FormData)
+		) {
+			headers.set("Content-Type", "application/json");
+		}
 
-    // Handle empty responses
-    if (response.status === 204) {
-      return {} as T;
-    }
+		if (requireAuth) {
+			const token = await this.getAccessToken();
+			if (token) {
+				headers.set("Authorization", `Bearer ${token}`);
+			}
+		}
 
-    return response.json();
-  }
+		let response = await fetch(`${API_URL}${endpoint}`, {
+			...customOptions,
+			headers,
+		});
 
-  public static async get<T>(endpoint: string, options?: Omit<RequestOptions, "method" | "body">): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: "GET" });
-  }
+		// 401 Unauthorized -> Attempt to refresh token and retry
+		if (response.status === 401 && requireAuth) {
+			const newToken = await this.refreshAccessToken();
+			if (newToken) {
+				// Retry with new token
+				headers.set("Authorization", `Bearer ${newToken}`);
+				response = await fetch(`${API_URL}${endpoint}`, {
+					...customOptions,
+					headers,
+				});
+			}
+		}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static async post<T>(endpoint: string, body: any, options?: Omit<RequestOptions, "method" | "body">): Promise<T> {
-    const isFormData = body instanceof FormData;
-    return this.request<T>(endpoint, {
-      ...options,
-      method: "POST",
-      body: isFormData ? body : JSON.stringify(body),
-    });
-  }
+		if (!response.ok) {
+			// Extract specific error details if possible
+			let errorMessage = "Request failed";
+			try {
+				const errorData = await response.json();
+				errorMessage = errorData.message || errorData.error || errorMessage;
+			} catch {
+				errorMessage = response.statusText || errorMessage;
+			}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public static async put<T>(endpoint: string, body: any, options?: Omit<RequestOptions, "method" | "body">): Promise<T> {
-    const isFormData = body instanceof FormData;
-    return this.request<T>(endpoint, {
-      ...options,
-      method: "PUT",
-      body: isFormData ? body : JSON.stringify(body),
-    });
-  }
+			const error = new Error(errorMessage) as Error & { status: number };
+			error.status = response.status;
+			throw error;
+		}
 
-  public static async delete<T>(endpoint: string, options?: Omit<RequestOptions, "method" | "body">): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: "DELETE" });
-  }
+		// Handle empty responses
+		if (response.status === 204) {
+			return {} as T;
+		}
+
+		return response.json();
+	}
+
+	protected async get<T>(
+		endpoint: string,
+		options?: Omit<RequestOptions, "method" | "body">,
+	): Promise<T> {
+		return this.request<T>(endpoint, { ...options, method: "GET" });
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	protected async post<T>(
+		endpoint: string,
+		body: any,
+		options?: Omit<RequestOptions, "method" | "body">,
+	): Promise<T> {
+		const isFormData = body instanceof FormData;
+		return this.request<T>(endpoint, {
+			...options,
+			method: "POST",
+			body: isFormData ? body : JSON.stringify(body),
+		});
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	protected async patch<T>(
+		endpoint: string,
+		body: any,
+		options?: Omit<RequestOptions, "method" | "body">,
+	): Promise<T> {
+		const isFormData = body instanceof FormData;
+		return this.request<T>(endpoint, {
+			...options,
+			method: "PATCH",
+			body: isFormData ? body : JSON.stringify(body),
+		});
+	}
+
+	protected async delete<T>(
+		endpoint: string,
+		options?: Omit<RequestOptions, "method" | "body">,
+	): Promise<T> {
+		return this.request<T>(endpoint, { ...options, method: "DELETE" });
+	}
 }

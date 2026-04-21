@@ -101,6 +101,14 @@ export default async function InvoicesPage({
 }
 ```
 
+### Building Forms
+
+- Use the same as `auth/login/components/LoginForm`
+- Use `useActionState` for form submissions
+- Form actions are built in `app/actions` directory
+- Form actions should be wrapped in `Suspense`
+- Error messages should be displayed in red color
+
 ### Styling
 
 - Use TailwindCSS for styling

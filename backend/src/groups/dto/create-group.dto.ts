@@ -11,7 +11,7 @@ import {
   ArrayMinSize,
   IsUrl,
   ValidateIf,
-	IsMilitaryTime,
+  IsMilitaryTime,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LocationType } from '../entities/group.entity';
@@ -51,7 +51,7 @@ export class CreateGroupDto {
     example: 'https://zoom.us/j/123456',
     description: 'Required if location_type is Online',
   })
-  @ValidateIf((o) => o.location_type === LocationType.ONLINE)
+  @ValidateIf((o: CreateGroupDto) => o.location_type === LocationType.ONLINE)
   @IsUrl()
   @IsNotEmpty()
   location_link?: string;
@@ -60,7 +60,7 @@ export class CreateGroupDto {
     example: 'مركز تعليمي',
     description: 'Required if location_type is Physical',
   })
-  @ValidateIf((o) => o.location_type === LocationType.PHYSICAL)
+  @ValidateIf((o: CreateGroupDto) => o.location_type === LocationType.PHYSICAL)
   @IsString()
   @IsNotEmpty()
   location_place?: string;

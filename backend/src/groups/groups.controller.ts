@@ -48,9 +48,12 @@ export class GroupsController {
     status: 201,
     description: 'Group(s) created successfully. May include overlap warnings.',
   })
-  @ApiResponse({ status: 403, description: 'Student does not belong to teacher.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Student does not belong to teacher.',
+  })
   async createGroup(@Req() req, @Body() dto: CreateGroupDto) {
-    const teacherId = req.user.userId;
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.createGroup(dto, teacherId);
   }
 
@@ -58,13 +61,34 @@ export class GroupsController {
 
   @Get()
   @ApiOperation({ summary: 'List groups for the authenticated teacher' })
-  @ApiQuery({ name: 'from', required: false, description: 'Start date filter (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'to', required: false, description: 'End date filter (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    description: 'Start date filter (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    description: 'End date filter (YYYY-MM-DD)',
+  })
   @ApiQuery({ name: 'status', required: false, enum: GroupStatus })
   @ApiQuery({ name: 'student_id', required: false, type: Number })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
-  @ApiResponse({ status: 200, description: 'Paginated list of groups returned successfully.' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of groups returned successfully.',
+  })
   async findAll(
     @Req() req,
     @Query('from') from?: string,
@@ -74,7 +98,7 @@ export class GroupsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    const teacherId = req.user.userId;
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.findAll(
       teacherId,
       {
@@ -93,10 +117,13 @@ export class GroupsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a single group with full details' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Group details returned successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Group details returned successfully.',
+  })
   @ApiResponse({ status: 404, description: 'Group not found.' })
   async findOne(@Req() req, @Param('id', ParseIntPipe) id: number) {
-    const teacherId = req.user.userId;
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.findOne(id, teacherId);
   }
 
@@ -110,20 +137,25 @@ export class GroupsController {
     status: 200,
     description: 'Group updated successfully. May include overlap warnings.',
   })
-  @ApiResponse({ status: 400, description: 'Cannot edit completed/cancelled groups.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot edit completed/cancelled groups.',
+  })
   async updateGroup(
     @Req() req,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateGroupDto,
   ) {
-    const teacherId = req.user.userId;
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.updateGroup(id, dto, teacherId);
   }
 
   // ==================== US3: Attendance & Status ====================
 
   @Patch(':id/attendance')
-  @ApiOperation({ summary: 'Update attendance, per-student notes, and group notes' })
+  @ApiOperation({
+    summary: 'Update attendance, per-student notes, and group notes',
+  })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateAttendanceDto })
   @ApiResponse({ status: 200, description: 'Attendance updated successfully.' })
@@ -132,7 +164,7 @@ export class GroupsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAttendanceDto,
   ) {
-    const teacherId = req.user.userId;
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.updateAttendance(id, dto, teacherId);
   }
 
@@ -141,13 +173,12 @@ export class GroupsController {
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateStatusDto })
   @ApiResponse({ status: 200, description: 'Status updated to Completed.' })
-  @ApiResponse({ status: 400, description: 'Only scheduled groups can be completed.' })
-  async updateStatus(
-    @Req() req,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() _dto: UpdateStatusDto,
-  ) {
-    const teacherId = req.user.userId;
+  @ApiResponse({
+    status: 400,
+    description: 'Only scheduled groups can be completed.',
+  })
+  async updateStatus(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.updateStatus(id, teacherId);
   }
 
@@ -155,15 +186,14 @@ export class GroupsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Cancel a group (soft-delete via Cancelled status)' })
+  @ApiOperation({
+    summary: 'Cancel a group (soft-delete via Cancelled status)',
+  })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 204, description: 'Group cancelled successfully.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
-  async cancelGroup(
-    @Req() req,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    const teacherId = req.user.userId;
+  async cancelGroup(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    const teacherId = (req as { user: { userId: number } }).user.userId;
     return this.groupsService.cancelGroup(id, teacherId);
   }
 }

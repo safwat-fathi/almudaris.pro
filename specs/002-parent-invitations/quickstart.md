@@ -1,10 +1,30 @@
-# Quickstart: Parent Invitations Overview
+# Quickstart: Parent Invitations
 
-## Overview
-This feature allows a Teacher to retrieve a unique, persistent link/QR code. Using this link, a Parent is redirected to a landing page where they can register or authenticate, instantly linking their account to the Teacher. Once linked, the parent can add students and immediately assign them to the Teacher.
+## Testing the Flow
 
-## Key Steps
-1. **Teacher Invitation Retrieval**: The Teacher logs in and accesses their profile/settings to copy their `inviteCode` URL.
-2. **Parent Landing Page**: A Parent clicks the URL (`/invite/XYZ`). If unauthenticated, they are redirected to login/register. 
-3. **Accepting Invitation**: Authenticated parents arrive at `/invite/XYZ`. The page checks if they are a parent. If so, it calls `POST /api/parents/link-teacher`. 
-4. **Student Assignment**: The parent is navigated to their dashboard with a prompt/wizard to "Add your child to start learning with [Teacher Name]" where they manage student creation and enrollment via server actions.
+1. **Login as Teacher**:
+   - Navigate to `/` and login as a Teacher.
+   - Go to the "Invitations" tab (or equivalent routing).
+   - Generate and copy the unique invitation link (e.g., `http://localhost:3000/invite/TCH-12345`).
+
+2. **Accept Invitation (New Parent)**:
+   - Open an incognito window and navigate to the copied invitation link.
+   - Verify that the explicit "Accept Invitation" confirmation screen is shown (with the teacher's details).
+   - Click "Register". The URL should carry the intent: `?inviteCode=TCH-12345`.
+   - Register as a Parent.
+   - After successful registration, you should be redirected back to the invitation endpoint or directly linked and redirected to the unified dashboard (`/dashboard`).
+
+3. **Accept Invitation (Existing Linked Parent)**:
+   - While still logged in as the new Parent, revisit the invitation link.
+   - Verify that an explicit "You are already linked to this teacher" message is displayed, with a button to continue to the dashboard.
+
+4. **Add Student to Teacher**:
+   - From the parent's dashboard, navigate to the "Students" section.
+   - Add a new Student profile.
+   - Assign the new student to the Teacher you linked with earlier (the teacher should appear in the searchable list of linked teachers).
+
+## Key Components
+
+- `/invite/[code]`: The main entry point for invitations.
+- `ParentTeacherLink`: The backend entity storing the connection.
+- `StudentTeacherEnrollment`: The backend entity storing the student's assignment to the teacher.
