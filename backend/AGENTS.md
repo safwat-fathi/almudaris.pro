@@ -68,4 +68,9 @@ This file provides guidelines for AI agents and coding assistants when working w
 
 **Always read & summarize before proposing a clear plan and write your plan in a markdown file and then ask before implementation / committing.**
 
-**Write your plan in a markdown file in `.docs/plans` directory in this format `resource_name-action-description.md` and then ask before implementation / committing.**
+
+## Plans
+- Always plan before implementing any feature.
+- store plan in .md format in .docs/plans/ folder
+- plan name should be in format: YYYY-MM-DD-feature-name.md
+- plan should include: objective, key files, implementation steps in phases, verification & testing, cleanup

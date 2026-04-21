@@ -1,91 +1,97 @@
 "use client";
 
-import { useState } from "react";
-import { mockSessions, mockStudents } from "@/data/mockData";
-import { formatNumber, formatDate, formatCurrency } from "@/lib/format";
+import { useState, useTransition } from "react";
+import { formatNumber, formatDate } from "@/lib/format";
 import { useRouter } from "next/navigation";
+import { Group } from "@/services/api/groups";
+import { updateAttendanceAction, markCompleteAction } from "@/app/actions/group.actions";
 
-type AttendanceStatus = "present" | "absent" | "";
-type PaymentStatus = "paid" | "unpaid" | "";
+type UIStatus = "present" | "absent" | "";
 
-export default function SessionAttendanceScreen({ sessionId }: { sessionId: string }) {
+export default function SessionAttendanceScreen({ group }: { group: Group }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
-  const [currentIndex, setCurrentIndex] = useState(() => {
-    const idx = mockSessions.findIndex((s) => s.id === sessionId);
-    return idx >= 0 ? idx : 0;
-  });
-
-  const session = mockSessions[currentIndex];
-
-  const goNext = () => {
-    setCurrentIndex((i) => (i + 1) % mockSessions.length);
-  };
-  
-  const goPrev = () => {
-    setCurrentIndex((i) => (i - 1 + mockSessions.length) % mockSessions.length);
-  };
-
-  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
-  const [payments, setPayments] = useState<Record<string, PaymentStatus>>(() => {
-    const initial: Record<string, PaymentStatus> = {};
-    mockStudents.forEach((s) => {
-      initial[s.id] = s.paymentStatus === "paid" ? "paid" : "unpaid";
+  // Map backend students to local attendance state
+  const [attendance, setAttendance] = useState<Record<number, UIStatus>>(() => {
+    const initial: Record<number, UIStatus> = {};
+    group.students.forEach((s) => {
+      initial[s.student_id] = s.attendance_status === "Present" ? "present" : s.attendance_status === "Absent" ? "absent" : "";
     });
     return initial;
   });
 
-  const handleAttendance = (studentId: string, status: AttendanceStatus) => {
+  // Local payments state (mock for now as backend doesn't support it yet)
+  const [payments, setPayments] = useState<Record<number, boolean>>({});
+
+  const handleAttendance = async (studentId: number, status: UIStatus) => {
+    const newStatus = attendance[studentId] === status ? "" : status;
+    const backendStatus = newStatus === "present" ? "Present" : newStatus === "absent" ? "Absent" : "Not set";
+    
     setAttendance((prev) => ({
       ...prev,
-      [studentId]: prev[studentId] === status ? "" : status,
+      [studentId]: newStatus,
     }));
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append(`student_${studentId}_status`, backendStatus);
+      await updateAttendanceAction(group.id, undefined, formData);
+    });
   };
 
-  const handlePayment = (studentId: string) => {
+  const handlePayment = (studentId: number) => {
     setPayments((prev) => ({
       ...prev,
-      [studentId]: prev[studentId] === "paid" ? "unpaid" : "paid",
+      [studentId]: !prev[studentId],
     }));
   };
 
   const attendAll = () => {
-    const allPresent: Record<string, AttendanceStatus> = {};
-    mockStudents.forEach((s) => {
-      allPresent[s.id] = "present";
+    const newAttendance: Record<number, UIStatus> = {};
+    const formData = new FormData();
+    
+    group.students.forEach((s) => {
+      newAttendance[s.student_id] = "present";
+      formData.append(`student_${s.student_id}_status`, "Present");
     });
-    setAttendance(allPresent);
+    
+    setAttendance(newAttendance);
+    
+    startTransition(async () => {
+      await updateAttendanceAction(group.id, undefined, formData);
+    });
+  };
+
+  const handleMarkComplete = () => {
+    startTransition(async () => {
+      await markCompleteAction(group.id);
+      router.refresh();
+    });
   };
 
   const presentCount = Object.values(attendance).filter((s) => s === "present").length;
-  const unpaidCount = Object.values(payments).filter((s) => s === "unpaid").length;
-  const totalCount = mockStudents.length;
+  const unpaidCount = group.students.length - Object.values(payments).filter(Boolean).length;
+  const totalCount = group.students.length;
 
   return (
     <>
-      {/* Session Switcher Navigation */}
+      {/* Session Switcher Navigation - Simplified for now */}
       <nav className="bg-surface-container-lowest border-b border-outline-variant/20 sticky top-16 z-40">
         <div className="flex items-center justify-between h-14 px-4">
           <button 
-            onClick={goPrev}
+            onClick={() => router.back()}
             className="flex items-center gap-1 text-outline hover:text-primary transition-colors"
           >
             <span className="material-symbols-outlined text-xl" style={{ direction: "ltr" }}>arrow_forward</span>
-            <span className="text-xs font-bold hidden sm:inline">الحصة السابقة</span>
+            <span className="text-xs font-bold hidden sm:inline">رجوع</span>
           </button>
           
-          <button className="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full hover:bg-surface-container-high transition-all active:scale-95">
+          <div className="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-full">
             <span className="text-sm font-extrabold text-on-surface">الحصة الحالية</span>
-            <span className="material-symbols-outlined text-sm">expand_more</span>
-          </button>
+          </div>
           
-          <button 
-            onClick={goNext}
-            className="flex items-center gap-1 text-outline hover:text-primary transition-colors"
-          >
-            <span className="text-xs font-bold hidden sm:inline">الحصة التالية</span>
-            <span className="material-symbols-outlined text-xl" style={{ direction: "ltr" }}>arrow_back</span>
-          </button>
+          <div className="w-20"></div>
         </div>
       </nav>
 
@@ -93,11 +99,14 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
       <div className="px-6 py-8 bg-linear-to-b from-surface-container-lowest to-surface">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="text-2xl font-black text-on-surface">{session.title}</h2>
+            <h2 className="text-2xl font-black text-on-surface">{group.title || "حصة تعليمية"}</h2>
             <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-outline font-medium text-sm">
-              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">location_on</span> {session.location}</span>
-              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">schedule</span> {session.time}</span>
-              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">calendar_today</span> {formatDate(session.date)}</span>
+              <span className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base">location_on</span> 
+                {group.location_type === 'Online' ? 'أونلاين' : (group.location_place || 'سنتر')}
+              </span>
+              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">schedule</span> {group.start_time}</span>
+              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">calendar_today</span> {formatDate(group.date)}</span>
             </div>
           </div>
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
@@ -124,21 +133,27 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
 
       {/* Quick Actions Bar */}
       <div className="px-6 py-4 flex gap-3 overflow-x-auto no-scrollbar">
-        <button onClick={attendAll} className="flex items-center gap-2 whitespace-nowrap bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all">
+        <button 
+          onClick={attendAll} 
+          disabled={isPending || group.status === 'Cancelled'}
+          className="flex items-center gap-2 whitespace-nowrap bg-primary text-on-primary px-5 py-2.5 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50"
+        >
           <span className="material-symbols-outlined text-lg">rule</span>
           <span>تحضير الكل</span>
         </button>
-        <button onClick={() => router.push(`/homework/new?sessionId=${sessionId}`)} className="flex items-center gap-2 whitespace-nowrap bg-surface-container-highest text-on-surface px-5 py-2.5 rounded-full font-bold text-sm hover:bg-primary-fixed transition-all">
-          <span className="material-symbols-outlined text-lg">post_add</span>
-          <span>إضافة واجب</span>
-        </button>
+        {group.status === 'Scheduled' && (
+          <button 
+            onClick={handleMarkComplete}
+            disabled={isPending}
+            className="flex items-center gap-2 whitespace-nowrap bg-green-600 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-md active:scale-95 transition-all disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+            <span>إكمال الحصة</span>
+          </button>
+        )}
         <button className="flex items-center gap-2 whitespace-nowrap bg-surface-container-highest text-on-surface px-5 py-2.5 rounded-full font-bold text-sm hover:bg-primary-fixed transition-all">
           <span className="material-symbols-outlined text-lg">payments</span>
           <span>تحصيل الكل</span>
-        </button>
-        <button className="flex items-center gap-2 whitespace-nowrap bg-surface-container-highest text-on-surface px-5 py-2.5 rounded-full font-bold text-sm hover:bg-primary-fixed transition-all">
-          <span className="material-symbols-outlined text-lg">file_download</span>
-          <span>تصدير كشف</span>
         </button>
       </div>
 
@@ -149,63 +164,63 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
           <span className="text-xs font-medium text-primary">تم الفرز حسب: الاسم</span>
         </div>
 
-        {mockStudents.map((student) => (
-          <div key={student.id} className="bg-surface-container-lowest p-4 rounded-xl flex justify-between items-center shadow-sm border border-outline-variant/10 flex-wrap gap-y-3">
+        {group.students.map((gs) => (
+          <div key={gs.student_id} className="bg-surface-container-lowest p-4 rounded-xl flex justify-between items-center shadow-sm border border-outline-variant/10 flex-wrap gap-y-3">
             <div className="flex items-center gap-4 w-full sm:w-auto">
-              {student.avatar ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={student.avatar}
-                  alt={student.name}
-                  className="w-12 h-12 rounded-full object-cover shadow-inner"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-primary-fixed/50 flex items-center justify-center font-bold text-primary-container text-lg shadow-inner">
-                  {student.initials || student.name.substring(0, 1)}
-                </div>
-              )}
+              <div className="w-12 h-12 rounded-full bg-primary-fixed/50 flex items-center justify-center font-bold text-primary-container text-lg shadow-inner">
+                {gs.student_name.substring(0, 1)}
+              </div>
               
               <div className="flex flex-col">
-                <span className="font-bold text-on-surface">{student.name}</span>
-                {student.subscriptionStatus === "expired" ? (
-                  <span className="text-[10px] text-tertiary font-bold">اشتراك منتهي</span>
-                ) : student.isNew ? (
-                  <span className="text-[10px] text-outline font-bold">طالب جديد</span>
-                ) : payments[student.id] === "paid" ? (
-                  <span className="text-[10px] text-outline">تم الدفع مسبقاً (اشتراك)</span>
+                <span className="font-bold text-on-surface">{gs.student_name}</span>
+                {payments[gs.student_id] ? (
+                  <span className="text-[10px] text-outline">تم الدفع</span>
                 ) : (
-                  <span className="text-[10px] text-tertiary font-bold">مديونية: {formatCurrency(50)}</span>
+                  <span className="text-[10px] text-tertiary font-bold">لم يتم الدفع</span>
                 )}
               </div>
             </div>
             
             <div className="flex gap-2 w-full sm:w-auto justify-end">
-              {attendance[student.id] === "present" ? (
-                <button onClick={() => handleAttendance(student.id, "present")} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary-container text-on-secondary-container font-bold text-xs ring-1 ring-secondary/20 hover:bg-secondary-container/80 transition-all">
+              {attendance[gs.student_id] === "present" ? (
+                <button 
+                  onClick={() => handleAttendance(gs.student_id, "present")} 
+                  disabled={isPending || group.status === 'Cancelled'}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-secondary-container text-on-secondary-container font-bold text-xs ring-1 ring-secondary/20 hover:bg-secondary-container/80 transition-all disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                   <span>حاضر</span>
                 </button>
-              ) : attendance[student.id] === "absent" ? (
-                <button onClick={() => handleAttendance(student.id, "absent")} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-tertiary-container text-on-tertiary-container font-bold text-xs hover:bg-tertiary-container/80 transition-all">
+              ) : attendance[gs.student_id] === "absent" ? (
+                <button 
+                  onClick={() => handleAttendance(gs.student_id, "absent")} 
+                  disabled={isPending || group.status === 'Cancelled'}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-tertiary-container text-on-tertiary-container font-bold text-xs hover:bg-tertiary-container/80 transition-all disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>
                   <span>غايب</span>
                 </button>
               ) : (
-                <button onClick={() => handleAttendance(student.id, "present")} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-bold text-xs border border-outline-variant/20 hover:bg-surface-variant transition-all">
+                <button 
+                  onClick={() => handleAttendance(gs.student_id, "present")} 
+                  disabled={isPending || group.status === 'Cancelled'}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-bold text-xs border border-outline-variant/20 hover:bg-surface-variant transition-all disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-base">circle</span>
                   <span>تحضير</span>
                 </button>
               )}
               
               <button 
-                onClick={() => handlePayment(student.id)}
+                onClick={() => handlePayment(gs.student_id)}
+                disabled={isPending || group.status === 'Cancelled'}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all ${
-                  payments[student.id] === "paid" 
+                  payments[gs.student_id] 
                     ? "bg-primary-fixed text-primary ring-1 ring-primary/20 hover:bg-primary-fixed/80" 
                     : "bg-surface-container-high text-on-surface-variant border border-outline-variant/20 hover:bg-surface-variant"
                 }`}
               >
-                {payments[student.id] === "paid" ? (
+                {payments[gs.student_id] ? (
                   <>
                     <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
                     <span>دفع</span>
@@ -222,11 +237,11 @@ export default function SessionAttendanceScreen({ sessionId }: { sessionId: stri
         ))}
       </section>
 
-      {/* Floating Action Button */}
-      <button className="fixed bottom-28 left-6 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40">
+      {/* Floating Action Button - Disabled for now */}
+      {/* <button className="fixed bottom-28 left-6 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40">
         <span className="material-symbols-outlined text-2xl">person_add</span>
         <span className="sr-only">إضافة طالب للحصة</span>
-      </button>
+      </button> */}
     </>
   );
 }

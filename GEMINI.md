@@ -31,3 +31,9 @@ TypeScript (Node.js): Follow standard conventions
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+
+## Plans
+- Always plan before implementing any feature.
+- store plan in .md format in .docs/plans/ folder
+- plan name should be in format: YYYY-MM-DD-feature-name.md
+- plan should include: objective, key files, implementation steps in phases, verification & testing, cleanup

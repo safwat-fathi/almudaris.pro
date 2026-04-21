@@ -35,7 +35,8 @@ export class HTTPService {
 				return null;
 			}
 
-			const data = await response.json();
+			const responseData = await response.json();
+			const data = responseData.data || responseData;
 
 			if (data.access_token) {
 				// Attempt to update cookies. This works in Server Actions or Route Handlers,

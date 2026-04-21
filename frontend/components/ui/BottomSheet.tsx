@@ -79,8 +79,9 @@ export function BottomSheet({
     }
 
     return () => {
-      if (!isOpen) {
-        document.body.style.overflow = "auto";
+      document.body.style.overflow = "auto";
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
       }
     };
   }, [isOpen]);

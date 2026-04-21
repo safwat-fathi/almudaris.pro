@@ -1,5 +1,6 @@
 "use client";
 
+import CONSTANTS from "@/lib/constants";
 import { useEffect } from "react";
 
 export default function TokenRefreshProvider({
@@ -10,13 +11,10 @@ export default function TokenRefreshProvider({
   useEffect(() => {
     // Check if user is authenticated by looking for the non-httpOnly USER_DATA cookie
     const hasUserData = document.cookie.includes("user_data");
-    
+
     if (!hasUserData) {
       return;
     }
-
-    // The access token expires in 15 minutes. Refresh it every 10 minutes to be safe.
-    const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
     const intervalId = setInterval(async () => {
       try {
@@ -26,11 +24,15 @@ export default function TokenRefreshProvider({
 
         if (!response.ok) {
           console.warn("Failed to auto-refresh token", await response.text());
+          if (response.status === 401) {
+            clearInterval(intervalId);
+            window.location.href = "/login";
+          }
         }
       } catch (error) {
         console.error("Error during auto-refresh", error);
       }
-    }, REFRESH_INTERVAL_MS);
+    }, CONSTANTS.REFRESH_INTERVAL_MS || 10 * 60 * 1000);
 
     return () => clearInterval(intervalId);
   }, []);

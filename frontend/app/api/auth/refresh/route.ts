@@ -9,6 +9,9 @@ export async function POST() {
   const refreshToken = cookieStore.get(CONSTANTS.REFRESH_TOKEN)?.value;
 
   if (!refreshToken) {
+    cookieStore.delete(CONSTANTS.ACCESS_TOKEN);
+    cookieStore.delete(CONSTANTS.REFRESH_TOKEN);
+    cookieStore.delete(CONSTANTS.USER_DATA);
     return NextResponse.json({ error: "No refresh token" }, { status: 401 });
   }
 
@@ -22,6 +25,9 @@ export async function POST() {
     });
 
     if (!response.ok) {
+      cookieStore.delete(CONSTANTS.ACCESS_TOKEN);
+      cookieStore.delete(CONSTANTS.REFRESH_TOKEN);
+      cookieStore.delete(CONSTANTS.USER_DATA);
       return NextResponse.json({ error: "Refresh failed" }, { status: 401 });
     }
 

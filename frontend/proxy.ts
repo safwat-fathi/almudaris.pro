@@ -57,6 +57,7 @@ export async function proxy(request: NextRequest) {
   let payload = token ? parseJwt(token) : null;
   let tokensRefreshed = false;
   let newAccessToken = "";
+  let newRefreshToken = "";
 
   // Check if token is expired or about to expire (within 1 minute)
   if (payload && payload.exp) {
@@ -80,12 +81,16 @@ export async function proxy(request: NextRequest) {
       });
 
       if (refreshRes.ok) {
-        const data = await refreshRes.json();
+        const resBody = await refreshRes.json();
+        const data = resBody.data || resBody;
         if (data.access_token) {
           token = data.access_token as string;
           payload = parseJwt(token);
           tokensRefreshed = true;
           newAccessToken = data.access_token;
+          if (data.refresh_token) {
+            newRefreshToken = data.refresh_token;
+          }
         }
       }
     } catch {
@@ -145,6 +150,16 @@ export async function proxy(request: NextRequest) {
       path: "/",
       maxAge: CONSTANTS.AUTH_MAX_AGE,
     });
+
+    if (newRefreshToken) {
+      response.cookies.set(CONSTANTS.REFRESH_TOKEN, newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: CONSTANTS.AUTH_MAX_AGE,
+      });
+    }
   }
 
   return response;

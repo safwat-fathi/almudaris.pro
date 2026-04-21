@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Body,
@@ -129,7 +128,7 @@ export class GroupsController {
 
   // ==================== US2: Update Group ====================
 
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({ summary: 'Update an upcoming group with edit scope support' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateGroupDto })

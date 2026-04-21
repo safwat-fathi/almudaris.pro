@@ -44,6 +44,25 @@ export class TeachersController {
   }
 
   /**
+   * Retrieves all students enrolled with the currently authenticated teacher.
+   */
+  @Get('students')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
+  @ApiOperation({
+    summary: 'Get all students enrolled with the authenticated teacher',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns a list of students with their IDs and names.',
+    schema: { example: [{ id: 1, name: 'Student Name' }] },
+  })
+  async getMyStudents(@Req() req) {
+    const teacherId = req.user.userId;
+    return this.teachersService.getStudents(teacherId);
+  }
+
+  /**
    * Retrieves the public profile of a teacher using their unique invite code.
    * This is used by parents when they click the invitation link to verify the teacher's identity.
    */

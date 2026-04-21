@@ -44,7 +44,7 @@ export async function createGroupAction(
 
 	try {
 		// Exclude csrf_token when sending to the API
-		const { csrf_token, ...apiData } = parsed.data;
+		const { csrf_token: _, ...apiData } = parsed.data;
 
 		// Convert location_type back to the exact type
 		const requestData: CreateGroupData = {
@@ -54,7 +54,8 @@ export async function createGroupAction(
 
 		const response = await groupsService.createGroup(requestData);
 
-		revalidatePath("/groups");
+		revalidatePath("/sessions");
+		revalidatePath("/sessions/[id]");
 
 		return {
 			success: true,
@@ -115,8 +116,8 @@ export async function updateGroupAction(
 
 		const response = await groupsService.updateGroup(groupId, requestData);
 
-		revalidatePath("/groups");
-		revalidatePath(`/groups/${groupId}`);
+		revalidatePath("/sessions");
+		revalidatePath(`/sessions/${groupId}`);
 
 		return {
 			success: true,
@@ -169,8 +170,8 @@ export async function updateAttendanceAction(
 			notes,
 			students: studentsData,
 		});
-		revalidatePath("/groups");
-		revalidatePath(`/groups/${groupId}`);
+		revalidatePath("/sessions");
+		revalidatePath(`/sessions/${groupId}`);
 		return { success: true };
 	} catch (error: unknown) {
 		const err = error as Error;
@@ -183,8 +184,8 @@ export async function markCompleteAction(
 ): Promise<UpdateAttendanceActionState> {
 	try {
 		await groupsService.updateStatus(groupId, { status: "Completed" });
-		revalidatePath("/groups");
-		revalidatePath(`/groups/${groupId}`);
+		revalidatePath("/sessions");
+		revalidatePath(`/sessions/${groupId}`);
 		return { success: true };
 	} catch (error: unknown) {
 		const err = error as Error;
@@ -197,8 +198,8 @@ export async function cancelGroupAction(
 ): Promise<UpdateAttendanceActionState> {
 	try {
 		await groupsService.cancelGroup(groupId);
-		revalidatePath("/groups");
-		revalidatePath(`/groups/${groupId}`);
+		revalidatePath("/sessions");
+		revalidatePath(`/sessions/${groupId}`);
 		return { success: true };
 	} catch (error: unknown) {
 		const err = error as Error;

@@ -8,7 +8,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 async function getInviteCode() {
   const cookieStore = await cookies();
   const token = cookieStore.get(CONSTANTS.ACCESS_TOKEN)?.value;
-  console.log(token);
 	
   if (!token) return null;
 
@@ -21,7 +20,7 @@ async function getInviteCode() {
     });
     if (!res.ok) return null;
     const response = await res.json();
-		console.log(response);
+
     return response.data?.inviteCode || response.inviteCode;
   } catch (error) {
     return null;

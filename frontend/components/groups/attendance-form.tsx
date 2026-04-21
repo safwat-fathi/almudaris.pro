@@ -31,7 +31,7 @@ export function AttendanceForm({ group }: AttendanceFormProps) {
     if (confirm('هل أنت متأكد من إلغاء هذه المجموعة؟ لا يمكن التراجع عن هذا الإجراء.')) {
       const res = await cancelGroupAction(group.id);
       if (res?.success) {
-        router.push('/groups');
+        router.push('/sessions');
       } else {
         alert(res?.error || 'حدث خطأ أثناء الإلغاء');
       }
