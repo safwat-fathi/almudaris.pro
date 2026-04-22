@@ -42,7 +42,7 @@ export const mockQuickActions = [
 		id: "2",
 		label: "إضافة حصة",
 		icon: "calendar_add_on",
-		href: "/sessions/new",
+		href: "/sessions?new=true",
 	},
 	{ id: "3", label: "تسجيل دفع", icon: "payments", href: "/payments/new" },
 	{ id: "4", label: "رابط الدعوة", icon: "qr_code", href: "/profile/invite" },

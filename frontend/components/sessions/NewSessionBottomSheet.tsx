@@ -3,23 +3,19 @@
 import { useRef } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import SessionForm from "./SessionForm";
-import { Group } from "@/services/api/groups";
 import { Student } from "@/services/api/teachers";
 
-interface EditSessionBottomSheetProps {
+interface NewSessionBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  group: Group | null;
   students: Student[];
 }
 
-export function EditSessionBottomSheet({
+export function NewSessionBottomSheet({
   isOpen,
   onClose,
-  group,
   students,
-}: EditSessionBottomSheetProps) {
-  const lastGroupRef = useRef<Group | null>(null);
+}: NewSessionBottomSheetProps) {
   const formKeyRef = useRef(0);
   const prevIsOpen = useRef(isOpen);
 
@@ -28,36 +24,26 @@ export function EditSessionBottomSheet({
   }
   prevIsOpen.current = isOpen;
 
-  if (group) {
-    lastGroupRef.current = group;
-  }
-
-  const displayGroup = group || lastGroupRef.current;
-
-  if (!displayGroup) return null;
-
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose}>
-      {/* TopAppBar */}
+      {/* Header */}
       <header className="bg-surface/85 backdrop-blur-md sticky top-0 z-10 flex items-center justify-center px-6 py-4 border-b border-outline-variant/10 relative">
-        <h1 className="font-headline font-extrabold text-lg text-primary text-center">تعديل الحصة</h1>
-        <button 
+        <h1 className="font-headline font-extrabold text-lg text-primary text-center">
+          إضافة حصة جديدة
+        </h1>
+        <button
           onClick={onClose}
           className="absolute left-6 w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors active:scale-95 duration-150"
         >
-          <span className="material-symbols-outlined text-2xl">
-            close
-          </span>
+          <span className="material-symbols-outlined text-2xl">close</span>
         </button>
       </header>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-6 custom-scrollbar">
-        <SessionForm 
-          key={`${displayGroup.id}-${formKeyRef.current}`}
-          isEdit={true} 
-          group={displayGroup} 
-          students={students} 
+        <SessionForm
+          key={formKeyRef.current}
+          students={students}
           isBottomSheet={true}
           onSuccess={onClose}
         />

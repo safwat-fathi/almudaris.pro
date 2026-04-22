@@ -11,20 +11,30 @@ interface SessionCardProps {
     color: string;
     status: string;
   };
+  onEdit?: () => void;
 }
 
-export default function SessionCard({ session }: SessionCardProps) {
+export default function SessionCard({ session, onEdit }: SessionCardProps) {
   const isPrimary = session.color === "primary";
   const isActive = session.status === "active";
 
   return (
     <div className={`bg-white p-5 rounded-2xl ${isPrimary ? 'shadow-md border-r-4 border-primary' : 'shadow-sm border-r-4 border-outline-variant'} flex flex-col gap-4 relative`}>
-      <Link 
-        href={`/sessions/${session.id}/edit`}
-        className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
-      >
-        <span className="material-symbols-outlined text-[18px]">edit</span>
-      </Link>
+      {onEdit ? (
+        <button 
+          onClick={onEdit}
+          className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[18px]">edit</span>
+        </button>
+      ) : (
+        <Link 
+          href={`/sessions/${session.id}/edit`}
+          className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">edit</span>
+        </Link>
+      )}
       
       <div className="flex items-start justify-between">
         <div className={`space-y-2 pr-2 ${!isPrimary ? 'text-on-surface/60' : ''}`}>

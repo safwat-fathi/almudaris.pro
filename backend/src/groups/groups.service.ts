@@ -251,7 +251,7 @@ export class GroupsService {
 
     if (group.status !== GroupStatus.SCHEDULED) {
       throw new BadRequestException(
-        'Cannot edit structural details of a completed or cancelled group.',
+        'لا يمكن تعديل تفاصيل حصة مكتملة أو ملغاة.',
       );
     }
 

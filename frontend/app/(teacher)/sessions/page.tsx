@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import SessionsHeader from "@/components/sessions/SessionsHeader";
-import SessionsList from "@/components/sessions/SessionsList";
+import SessionsView from "@/components/sessions/SessionsView";
 import { groupsService } from "@/services/api/groups";
 import { Student, teachersService } from "@/services/api/teachers";
-import { Suspense } from "react";
 
 export const metadata: Metadata = {
 	title: "الجلسات",
@@ -12,12 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function SessionsPage() {
-	let paginatedGroups;
+	let groups = [];
 	let students: Student[] = [];
 	let error = null;
 
 	try {
-		paginatedGroups = await groupsService.fetchGroups();
+		const paginatedGroups = await groupsService.fetchGroups();
+		groups = paginatedGroups?.data?.items || [];
 		const studentsResponse = await teachersService.fetchStudents();
 		students = studentsResponse.data;
 	} catch (err: unknown) {
@@ -35,20 +34,7 @@ export default async function SessionsPage() {
 
 	return (
 		<main className="max-w-5xl mx-auto px-4 md:px-8 pt-6 md:pt-8 w-full pb-32">
-			<SessionsHeader />
-
-			<Suspense
-				fallback={
-					<div className="bg-red-50 text-red-800 p-4 rounded-lg text-sm text-center">
-						Loading...
-					</div>
-				}
-			>
-				<SessionsList
-					groups={paginatedGroups?.data?.items || []}
-					students={students}
-				/>
-			</Suspense>
+			<SessionsView groups={groups} students={students} />
 		</main>
 	);
 }
