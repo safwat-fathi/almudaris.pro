@@ -1,10 +1,14 @@
 # al-mudaris-pro Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-20
+Auto-generated from all feature plans. Last updated: 2026-04-23
 
 ## Active Technologies
 - TypeScript Node.js, Next.js v16 (Frontend), NestJS (Backend) + React Server Components, Zustand, TailwindCSS, Zod, TypeORM/pg, Swagger (001-groups-invitations-management)
 - PostgreSQL (using `SERIAL` for PKs, `jsonb` for JSON) (001-groups-invitations-management)
+- TypeScript (Node.js) + NestJS, TypeORM, Next.js v16, TailwindCSS, Zustand, Zod, Swagger (003-homework-feature)
+- PostgreSQL (`SERIAL` PK, `jsonb`) (003-homework-feature)
+- TypeScript / Node.js (Latest stable) + NestJS (Backend), Next.js v16 App Router (Frontend), TypeORM, Zod, TailwindCSS, Zustand, Swagger (003-homework-feature)
+- PostgreSQL (using `SERIAL` for PKs, `jsonb` for attachment metadata and audit logs) (003-homework-feature)
 
 - TypeScript (Node.js) + NestJS (Backend), Next.js v16 (Frontend, App Router), TailwindCSS, Zustand, Zod, TypeORM/pg (001-groups-management)
 - Nextjs current version (v16.0.3) uses proxy.ts as middleware not middleware.ts
@@ -25,9 +29,10 @@ npm test && npm run lint
 TypeScript (Node.js): Follow standard conventions
 
 ## Recent Changes
+- 003-homework-feature: Added TypeScript / Node.js (Latest stable) + NestJS (Backend), Next.js v16 App Router (Frontend), TypeORM, Zod, TailwindCSS, Zustand, Swagger
+- 003-homework-feature: Added TypeScript (Node.js) + NestJS, TypeORM, Next.js v16, TailwindCSS, Zustand, Zod, Swagger
 - 001-groups-invitations-management: Added TypeScript Node.js, Next.js v16 (Frontend), NestJS (Backend) + React Server Components, Zustand, TailwindCSS, Zod, TypeORM/pg, Swagger
 
-- 001-groups-management: Added TypeScript (Node.js) + NestJS (Backend), Next.js v16 (Frontend, App Router), TailwindCSS, Zustand, Zod, TypeORM/pg
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
