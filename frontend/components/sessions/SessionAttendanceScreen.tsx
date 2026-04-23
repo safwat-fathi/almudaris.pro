@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { formatNumber, formatDate } from "@/lib/format";
+import { formatNumber, formatDate, formatTimeUI } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import { Group } from "@/services/api/groups";
 import { updateAttendanceAction, markCompleteAction } from "@/app/actions/group.actions";
@@ -105,7 +105,7 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
                 <span className="material-symbols-outlined text-base">location_on</span> 
                 {group.location_type === 'Online' ? 'أونلاين' : (group.location_place || 'سنتر')}
               </span>
-              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">schedule</span> {group.start_time}</span>
+              <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">schedule</span> {formatTimeUI(group.start_time)}</span>
               <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-base">calendar_today</span> {formatDate(group.date)}</span>
             </div>
           </div>

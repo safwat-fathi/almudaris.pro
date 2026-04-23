@@ -15,19 +15,7 @@ interface SessionsListProps {
 export default function SessionsList({ groups = [], students = [] }: SessionsListProps) {
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
 
-  const sessions = groups.slice(0, 3).map((group) => {
-    const isOnline = group.location_type === "Online";
-    return {
-      id: group.id.toString(),
-      title: group.title || "حصة تعليمية",
-      time: group.start_time || "",
-      studentsCount: group.students?.length || 0,
-      icon: isOnline ? "language" : "location_on",
-      color: isOnline ? "primary" : "secondary",
-      status: group.status === "Scheduled" ? "active" : "inactive",
-      originalGroup: group,
-    };
-  });
+  const displayGroups = groups.slice(0, 3);
 
   return (
     <section className="space-y-4">
@@ -40,12 +28,12 @@ export default function SessionsList({ groups = [], students = [] }: SessionsLis
       </div>
       
       <div className="space-y-4">
-        {sessions.length > 0 ? (
-          sessions.map((session) => (
+        {displayGroups.length > 0 ? (
+          displayGroups.map((group) => (
             <SessionCard 
-              key={session.id} 
-              session={session} 
-              onEdit={() => setEditingGroup(session.originalGroup)}
+              key={group.id} 
+              group={group} 
+              onEdit={() => setEditingGroup(group)}
             />
           ))
         ) : (

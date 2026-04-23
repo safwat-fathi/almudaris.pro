@@ -4,6 +4,7 @@ import { useState, useActionState, useEffect } from "react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Group, LocationType } from "@/services/api/groups";
+import { formatTimeUI } from "@/lib/format";
 import {
 	createGroupAction,
 	updateGroupAction,
@@ -112,7 +113,7 @@ export default function SessionForm({
 							name="start_time"
 							type="time"
 							required
-							defaultValue={group?.start_time ? group.start_time.substring(0, 5) : "17:00"}
+							defaultValue={group?.start_time ? formatTimeUI(group.start_time) : "17:00"}
 							icon="schedule"
 						/>
 						{state.fieldErrors?.start_time && (

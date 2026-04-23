@@ -1,5 +1,6 @@
 import React from 'react';
 import { Group } from '@/services/api/groups';
+import { formatTimeUI } from '@/lib/format';
 
 interface GroupCardProps {
   group: Group;
@@ -29,7 +30,7 @@ export function GroupCard({ group }: GroupCardProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px] text-gray-400">schedule</span>
-          <span>{group.start_time} - {group.end_time} ({group.duration_minutes} دقيقة)</span>
+          <span>{formatTimeUI(group.start_time)} - {formatTimeUI(group.end_time)} ({group.duration_minutes} دقيقة)</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px] text-gray-400">

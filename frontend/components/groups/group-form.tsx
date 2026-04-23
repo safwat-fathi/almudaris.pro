@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useActionState } from 'react';
 import { createGroupAction, updateGroupAction, CreateGroupActionState } from '@/app/actions/group.actions';
+import { formatTimeUI } from '@/lib/format';
 import { OverlapWarning } from './overlap-warning';
 import { RecurringOptions } from './recurring-options';
 import { Group } from '@/services/api/groups';
@@ -69,7 +70,7 @@ export function GroupForm({ students, group }: GroupFormProps) {
             type="time" 
             name="start_time" 
             required 
-            defaultValue={group?.start_time}
+            defaultValue={group?.start_time ? formatTimeUI(group.start_time) : undefined}
             className="w-full border border-gray-300 rounded-lg p-2"
           />
           {state.fieldErrors?.start_time && <p className="text-red-500 text-xs mt-1">{state.fieldErrors.start_time[0]}</p>}
