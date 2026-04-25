@@ -24,10 +24,10 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create backend homework and submissions modules in `backend/src/homework/` and `backend/src/submissions/`
-- [ ] T002 [P] Register modules in `backend/src/app.module.ts`
-- [ ] T003 Create frontend homework and actions directories in `frontend/app/(student)/homework/` and `frontend/app/actions/`
-- [ ] T004 [P] Configure RTL support and tailwind for new components in `frontend/app/globals.css`
+- [x] T001 Create backend homework and submissions modules in `backend/src/homework/` and `backend/src/submissions/`
+- [x] T002 [P] Register modules in `backend/src/app.module.ts`
+- [x] T003 Create frontend homework and actions directories in `frontend/app/(student)/homework/` and `frontend/app/actions/`
+- [x] T004 [P] Configure RTL support and tailwind for new components in `frontend/app/globals.css`
 
 ---
 
@@ -37,12 +37,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] Create `Homework` entity in `backend/src/homework/entities/homework.entity.ts` (SERIAL PK, jsonb)
-- [ ] T006 [P] Create `Submission` entity in `backend/src/submissions/entities/submission.entity.ts` (SERIAL PK, Unique (homework_id, student_id))
-- [ ] T007 [P] Create `SubmissionAttachment` entity in `backend/src/submissions/entities/attachment.entity.ts`
-- [ ] T008 [P] Create `SubmissionAuditLog` entity in `backend/src/submissions/entities/audit-log.entity.ts` (jsonb metadata)
-- [ ] T009 Generate and run database migrations using `pnpm run migration:run` in `backend/`
-- [ ] T010 Setup Swagger decorators for Homework and Submission controllers in `backend/src/homework/homework.controller.ts` and `backend/src/submissions/submissions.controller.ts`
+- [x] T005 [P] Create `Homework` entity in `backend/src/homework/entities/homework.entity.ts` (SERIAL PK, jsonb)
+- [x] T006 [P] Create `Submission` entity in `backend/src/submissions/entities/submission.entity.ts` (SERIAL PK, Unique (homework_id, student_id))
+- [x] T007 [P] Create `SubmissionAttachment` entity in `backend/src/submissions/entities/attachment.entity.ts`
+- [x] T008 [P] Create `SubmissionAuditLog` entity in `backend/src/submissions/entities/audit-log.entity.ts` (jsonb metadata)
+- [x] T009 Generate and run database migrations using `pnpm run migration:run` in `backend/`
+- [x] T010 Setup Swagger decorators for Homework and Submission controllers in `backend/src/homework/homework.controller.ts` and `backend/src/submissions/submissions.controller.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -56,13 +56,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Implement `CreateHomeworkDto` in `backend/src/homework/dto/create-homework.dto.ts` (Zod validation)
-- [ ] T012 [US1] Implement `HomeworkService.create()` in `backend/src/homework/homework.service.ts`
-- [ ] T013 [US1] Implement `POST /homework` endpoint in `backend/src/homework/homework.controller.ts`
-- [ ] T014 [US1] Create Zod schema for homework form in `frontend/schemas/homework.schema.ts`
-- [ ] T015 [US1] Implement `createHomework` Server Action in `frontend/app/actions/homework.actions.ts`
-- [ ] T016 [US1] Build "Add Homework" Bottom Sheet component in `frontend/components/homework/AddHomeworkSheet.tsx` (Mobile-first, Arabic UI)
-- [ ] T017 [US1] Integrate "Add Homework" trigger in `frontend/app/(teacher)/sessions/[id]/page.tsx`
+- [x] T011 [P] [US1] Implement `CreateHomeworkDto` in `backend/src/homework/dto/create-homework.dto.ts` (Zod validation)
+- [x] T012 [US1] Implement `HomeworkService.create()` in `backend/src/homework/homework.service.ts`
+- [x] T013 [US1] Implement `POST /homework` endpoint in `backend/src/homework/homework.controller.ts`
+- [x] T014 [US1] Create Zod schema for homework form in `frontend/schemas/homework.schema.ts`
+- [x] T015 [US1] Implement `createHomework` Server Action in `frontend/app/actions/homework.actions.ts`
+- [x] T016 [US1] Build "Add Homework" Bottom Sheet component in `frontend/components/homework/AddHomeworkSheet.tsx` (Mobile-first, Arabic UI)
+- [x] T017 [US1] Integrate "Add Homework" trigger in `frontend/app/(teacher)/sessions/[id]/page.tsx`
 
 **Checkpoint**: User Story 1 is fully functional. Teachers can now create homework assignments.
 
@@ -76,12 +76,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T018 [P] [US2] Implement `CreateSubmissionDto` in `backend/src/submissions/dto/create-submission.dto.ts`
-- [ ] T019 [US2] Implement `SubmissionsService.submit()` in `backend/src/submissions/submissions.service.ts` (Handles versioning and replaces attachments)
-- [ ] T020 [US2] Implement `POST /homework/:id/submissions` endpoint in `backend/src/submissions/submissions.controller.ts`
-- [ ] T021 [US2] Implement `submitHomework` Server Action in `frontend/app/actions/submissions.actions.ts`
-- [ ] T022 [US2] Build Homework List and Submission Bottom Sheet in `frontend/app/(student)/homework/page.tsx` and `frontend/components/submissions/SubmissionSheet.tsx`
-- [ ] T023 [US2] Create Status Badge component in `frontend/components/ui/StatusBadge.tsx` (Supports RTL and action-driven colors)
+- [x] T018 [P] [US2] Implement `CreateSubmissionDto` in `backend/src/submissions/dto/create-submission.dto.ts`
+- [x] T019 [US2] Implement `SubmissionsService.submit()` in `backend/src/submissions/submissions.service.ts` (Handles versioning and replaces attachments)
+- [x] T020 [US2] Implement `POST /homework/:id/submissions` endpoint in `backend/src/submissions/submissions.controller.ts`
+- [x] T021 [US2] Implement `submitHomework` Server Action in `frontend/app/actions/submissions.actions.ts`
+- [x] T022 [US2] Build Homework List and Submission Bottom Sheet in `frontend/app/(student)/homework/page.tsx` and `frontend/components/submissions/SubmissionSheet.tsx`
+- [x] T023 [US2] Create Status Badge component in `frontend/components/ui/StatusBadge.tsx` (Supports RTL and action-driven colors)
 
 **Checkpoint**: User Story 2 is functional. Students can submit their assignments.
 
@@ -95,12 +95,12 @@
 
 ### Implementation for User Stories 3 & 4
 
-- [ ] T024 [P] [US3] Implement dynamic status computation logic in `backend/src/common/status.util.ts`
-- [ ] T025 [US4] Implement `HomeworkService.getSubmissionsByHomework()` in `backend/src/homework/homework.service.ts` (Joins students and computes status)
-- [ ] T026 [US4] Implement `GET /homework/:id/submissions` endpoint in `backend/src/homework/homework.controller.ts`
-- [ ] T027 [US4] Build Teacher Submission Review screen in `frontend/app/(teacher)/sessions/[id]/homework/[homeworkId]/page.tsx`
-- [ ] T028 [US4] Build Submission Details view in `frontend/components/submissions/SubmissionDetails.tsx` (Shows answer text and attachment links)
-- [ ] T029 [US3] Add "Late" warning banner in `frontend/components/submissions/SubmissionSheet.tsx`
+- [x] T024 [P] [US3] Implement dynamic status computation logic in `backend/src/common/status.util.ts`
+- [x] T025 [US4] Implement `HomeworkService.getSubmissionsByHomework()` in `backend/src/homework/homework.service.ts` (Joins students and computes status)
+- [x] T026 [US4] Implement `GET /homework/:id/submissions` endpoint in `backend/src/homework/homework.controller.ts`
+- [x] T027 [US4] Build Teacher Submission Review screen in `frontend/app/(teacher)/sessions/[id]/homework/[homeworkId]/page.tsx`
+- [x] T028 [US4] Build Submission Details view in `frontend/components/submissions/SubmissionDetails.tsx` (Shows answer text and attachment links)
+- [x] T029 [US3] Add "Late" warning banner in `frontend/components/submissions/SubmissionSheet.tsx`
 
 **Checkpoint**: Teachers can now track and review all student submissions with accurate statuses.
 
@@ -114,9 +114,9 @@
 
 ### Implementation
 
-- [ ] T030 [US1] Implement `PATCH /homework/:id` for visibility toggle in `backend/src/homework/homework.controller.ts`
-- [ ] T031 [US1] Implement `toggleHomeworkStatus` Server Action in `frontend/app/actions/homework.actions.ts`
-- [ ] T032 [US1] Add visibility toggle UI in `frontend/app/(teacher)/sessions/[id]/page.tsx`
+- [x] T030 [US1] Implement `PATCH /homework/:id` for visibility toggle in `backend/src/homework/homework.controller.ts`
+- [x] T031 [US1] Implement `toggleHomeworkStatus` Server Action in `frontend/app/actions/homework.actions.ts`
+- [x] T032 [US1] Add visibility toggle UI in `frontend/app/(teacher)/sessions/[id]/page.tsx`
 
 ---
 
@@ -124,11 +124,11 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T033 [P] Implement `SubmissionAuditLog` creation in `backend/src/submissions/submissions.service.ts` (Log on every submission attempt)
-- [ ] T034 [P] Implement file type and size validation for attachments in `backend/src/submissions/submissions.service.ts` (10MB limit, PDF/PNG/JPG)
-- [ ] T035 [P] Final RTL audit and Arabic text verification across all new screens
-- [ ] T036 Run `npm run lint` and `npm test` in both `backend/` and `frontend/` directories
-- [ ] T037 [P] Update API documentation in `backend/src/main.ts` (Swagger refresh)
+- [x] T033 [P] Implement `SubmissionAuditLog` creation in `backend/src/submissions/submissions.service.ts` (Log on every submission attempt)
+- [x] T034 [P] Implement file type and size validation for attachments in `backend/src/submissions/submissions.service.ts` (10MB limit, PDF/PNG/JPG)
+- [x] T035 [P] Final RTL audit and Arabic text verification across all new screens
+- [x] T036 Run `npm run lint` and `npm test` in both `backend/` and `frontend/` directories
+- [x] T037 [P] Update API documentation in `backend/src/main.ts` (Swagger refresh)
 
 ---
 

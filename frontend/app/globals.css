@@ -69,3 +69,16 @@
   white-space: nowrap;
   direction: ltr;
 }
+
+html, body {
+  direction: rtl;
+  text-align: right;
+  font-family: var(--font-body);
+}
+
+/* Base utility for LTR exceptions if needed */
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+

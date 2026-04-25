@@ -15,7 +15,8 @@ export default async function Home() {
   let groups: Group[] = [];
   let students: Student[] = [];
   try {
-    const paginatedGroups = await groupsService.fetchGroups();
+    const today = new Date().toISOString().split('T')[0];
+    const paginatedGroups = await groupsService.fetchGroups({ from: today, to: today });
     groups = paginatedGroups?.data?.items || [];
     const studentsResponse = await teachersService.fetchStudents();
     students = studentsResponse.data;

@@ -12,6 +12,8 @@ import { TeachersModule } from './teachers/teachers.module';
 import { ParentsModule } from './parents/parents.module';
 import { ChildrenModule } from './children/children.module';
 import { GroupsModule } from './groups/groups.module';
+import { HomeworkModule } from './homework/homework.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -38,6 +40,8 @@ const ENV = process.env.NODE_ENV;
     ParentsModule,
     ChildrenModule,
     GroupsModule,
+    HomeworkModule,
+    SubmissionsModule,
   ],
   controllers: [HealthController],
   providers: [UserRlsInterceptor],

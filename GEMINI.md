@@ -1,6 +1,6 @@
 # al-mudaris-pro Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-23
+Auto-generated from all feature plans. Last updated: 2026-04-25
 
 ## Active Technologies
 - TypeScript Node.js, Next.js v16 (Frontend), NestJS (Backend) + React Server Components, Zustand, TailwindCSS, Zod, TypeORM/pg, Swagger (001-groups-invitations-management)
@@ -30,8 +30,8 @@ TypeScript (Node.js): Follow standard conventions
 
 ## Recent Changes
 - 003-homework-feature: Added TypeScript / Node.js (Latest stable) + NestJS (Backend), Next.js v16 App Router (Frontend), TypeORM, Zod, TailwindCSS, Zustand, Swagger
+- 003-homework-feature: Added TypeScript / Node.js (Latest stable) + NestJS (Backend), Next.js v16 App Router (Frontend), TypeORM, Zod, TailwindCSS, Zustand, Swagger
 - 003-homework-feature: Added TypeScript (Node.js) + NestJS, TypeORM, Next.js v16, TailwindCSS, Zustand, Zod, Swagger
-- 001-groups-invitations-management: Added TypeScript Node.js, Next.js v16 (Frontend), NestJS (Backend) + React Server Components, Zustand, TailwindCSS, Zod, TypeORM/pg, Swagger
 
 
 <!-- MANUAL ADDITIONS START -->

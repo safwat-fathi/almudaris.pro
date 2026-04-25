@@ -157,7 +157,7 @@ export class GroupsService {
     const result = await this.groupRepo.find({
       where: { id: In(createdGroups.map((g) => g.id)) },
       relations: ['students'],
-      order: { date: 'ASC' },
+      order: { date: 'ASC', start_time: 'ASC' },
     });
 
     return { groups: result, warnings };
