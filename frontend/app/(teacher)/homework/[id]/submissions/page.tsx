@@ -50,7 +50,7 @@ export default async function HomeworkSubmissionsPage({ params }: PageProps) {
         </button>
       </header>
 
-      <main className="pt-24 px-6 md:px-20 max-w-2xl mx-auto w-full grow">
+      <main className="pt-24 pb-32 px-6 max-w-2xl mx-auto w-full grow">
         
         {/* Selected Homework Info Card */}
         <HomeworkSummaryCard
@@ -67,9 +67,9 @@ export default async function HomeworkSubmissionsPage({ params }: PageProps) {
         />
 
         {/* Student List Header */}
-        <div className="flex justify-between items-center mb-6 px-1">
-          <h3 className="text-xl font-bold text-on-surface font-headline">قائمة الطلاب</h3>
-          <button className="text-primary font-bold text-sm flex items-center gap-1 hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors active:scale-95">
+        <div className="flex justify-between items-center mb-6 px-2">
+          <h3 className="text-xl font-bold text-on-surface">قائمة الطلاب</h3>
+          <button className="text-primary font-bold text-sm flex items-center gap-1">
             <span className="material-symbols-outlined text-lg">filter_list</span>
             تصفية
           </button>

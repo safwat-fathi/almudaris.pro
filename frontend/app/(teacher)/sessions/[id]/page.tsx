@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AddHomeWorkSheet } from "@/components/homework/AddHomeWorkSheet";
 import { toggleHomeworkStatus } from "@/app/actions/homework.actions";
 import { homeworkService } from "@/services/api/homework";	
+import Link from "next/link";
 
 type Props = {
 	params: Promise<{ id: string }>;
@@ -82,7 +83,8 @@ export default async function SessionDetailsPage({ params }: Props) {
 							</div>
 						) : (
 							homeworkList.map(homework => (
-								<div
+								<Link
+									href={`/sessions/${groupId}/homework/${homework.id}`}
 									key={homework.id}
 									className="p-4 bg-surface-container rounded-2xl flex justify-between items-center"
 								>
@@ -115,7 +117,7 @@ export default async function SessionDetailsPage({ params }: Props) {
 											{homework.is_open ? "إغلاق الواجب" : "فتح الواجب"}
 										</button>
 									</form>
-								</div>
+								</Link>
 							))
 						)}
 					</div>

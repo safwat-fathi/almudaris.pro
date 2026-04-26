@@ -37,6 +37,7 @@ This file provides guidelines for AI agents and coding assistants when working w
 - Do not rename or move files unless explicitly required to satisfy the request.
 - Avoid making cross-cutting refactors without clear user direction.
 - Do not create migration files unless explicitly required to satisfy the request.
+- Always add try catch and error handling to all functions.
 
 ## Testing and verification
 

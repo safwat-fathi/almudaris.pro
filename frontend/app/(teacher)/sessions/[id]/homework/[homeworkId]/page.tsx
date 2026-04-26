@@ -1,5 +1,10 @@
 import { StatusBadge } from '../../../../../../components/ui/StatusBadge';
 import { SubmissionDetails } from '../../../../../../components/submissions/SubmissionDetails';
+import Link from "next/link";
+import { groupsService } from "@/services/api/groups";
+import { homeworkService } from "@/services/api/homework";
+import { notFound } from "next/navigation";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 async function getSubmissions(homeworkId: string) {
   // Mock data for MVP
@@ -10,37 +15,78 @@ async function getSubmissions(homeworkId: string) {
   ];
 }
 
-export default async function HomeworkSubmissionsPage({ params }: { params: { id: string, homeworkId: string } }) {
-  const submissions = await getSubmissions(params.homeworkId);
+export default async function HomeworkSubmissionsPage({
+	params,
+}: {
+	params: Promise<{ id: string; homeworkId: string }>;
+}) {
+	const { id, homeworkId } = await params;
+	const submissionsResponse =
+		await homeworkService.getSubmissionsByHomeworkId(homeworkId);
+	const group = await groupsService.fetchGroup(parseInt(id, 10));
+	const homeworksResponse = await homeworkService.fetchHomeworkByGroupId(
+		parseInt(id, 10),
+	);
 
-  return (
-    <div className="p-6 max-w-2xl mx-auto min-h-screen bg-[var(--color-background)]">
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">مراجعة الواجب</h1>
-          <p className="text-[var(--color-on-surface-variant)] mt-2">الحصة: {params.id}</p>
-        </div>
-        <a href={`/sessions/${params.id}`} className="text-[var(--color-primary)] font-bold">العودة للحصة</a>
-      </header>
+	if (
+		!group ||
+		!group.data ||
+		!homeworksResponse ||
+		!homeworksResponse.data ||
+		!submissionsResponse ||
+		!submissionsResponse.data
+	) {
+		return notFound();
+	}
 
-      <div className="flex flex-col gap-4">
-        {submissions.map((student: any) => (
-          <div key={student.student_id} className="bg-[var(--color-surface-container-lowest)] p-5 rounded-[var(--radius-lg)] shadow-sm border border-[var(--color-surface-container-highest)]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-headline font-bold text-[var(--color-on-surface)]">{student.student_name}</h2>
-              <StatusBadge status={student.status} />
-            </div>
-            
-            {student.submission ? (
-              <SubmissionDetails submission={student.submission} />
-            ) : (
-              <div className="text-[var(--color-outline)] text-sm py-4 text-center bg-[var(--color-surface-container)] rounded-2xl">
-                لا يوجد تقديم حتى الآن.
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+	const homework = homeworksResponse.data.find(
+		(homework: any) => homework.id === parseInt(homeworkId, 10),
+	);
+
+	return (
+		<div className="w-full p-6 mx-auto min-h-screen bg-background">
+			<header className="mb-8 flex flex-col gap-4">
+				<div className="flex flex-col gap-2">
+					<Link
+						href={`/sessions/${id}`}
+						className="flex items-center gap-2 text-primary font-bold"
+					>
+						<ArrowRightIcon className="size-5" />
+						العودة للحصة
+					</Link>
+					<h1 className="text-center text-3xl font-headline font-bold text-on-surface">
+						مراجعة الواجب
+					</h1>
+				</div>
+				<div className="flex flex-col items-center gap-2">
+					<p className="text-on-surface-variant ">الحصة: {group.data.title}</p>
+					<p className="text-on-surface-variant ">الواجب: {homework?.title}</p>
+				</div>
+			</header>
+
+			<div className="flex flex-col gap-4 w-full min-w-[148px]">
+				{submissionsResponse.data.map((student: any) => (
+					<div
+						key={student.student_id}
+						className="bg-surface-container-lowest p-5 rounded-lg shadow-sm border border-surface-container-highest "
+					>
+						<div className="flex justify-between items-center mb-4">
+							<h2 className="text-lg font-headline font-bold text-on-surface">
+								{student.student_name}
+							</h2>
+							<StatusBadge status={student.status} />
+						</div>
+
+						{student.submission ? (
+							<SubmissionDetails submission={student.submission} />
+						) : (
+							<div className="text-outline text-sm py-4 text-center bg-surface-container rounded-2xl">
+								لا يوجد تقديم حتى الآن.
+							</div>
+						)}
+					</div>
+				))}
+			</div>
+		</div>
+	);
 }

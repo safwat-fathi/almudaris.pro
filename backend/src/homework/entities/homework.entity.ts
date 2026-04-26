@@ -18,10 +18,10 @@ export class Homework {
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description?: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  due_date: Date;
+  due_date?: Date | null;
 
   @Column({ default: true })
   is_open: boolean;

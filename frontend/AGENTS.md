@@ -134,7 +134,7 @@ export default async function InvoicesPage({
 - Do not fetch data on client side
 - Build a dedicated service as in `services/api/example.service.ts` and always use it to fetch data
 - All API services should be defined in `services/api` directory
-- All API services should be inherited from `services/base/HTTPService`
+- All API services should be class based and inherited from `services/base/HTTPService`
 - `access_token` and `refresh_token` stored in Cookies can be read in server-side only
 - Define models for API responses
 - For complex and composed queries use (BFF) the same as `services/bff/example.service.ts`
@@ -196,6 +196,7 @@ export const STORAGE_KEYS = {
 - Use PascalCase for all React component file and component names (e.g., InvoiceForm.tsx, Sidebar.tsx).
 - Prefer to read and summarize before editing.
 - Never overwrite or remove large files without explicit user approval.
+- Always use already existing utilities & components and don't reinvent the wheel.
 
 ## Allowed Without Prompt
 

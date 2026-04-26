@@ -17,7 +17,13 @@ class HomeworkService extends HTTPService {
 	}
 
 	async fetchHomeworkByGroupId(groupId: number) {
-		return this.get<{data: Homework[]}>(`/homework/group/${groupId}`);
+		return this.get<{ data: Homework[] }>(`/homework/group/${groupId}`);
+	}
+
+	async getSubmissionsByHomeworkId(homeworkId: string) {
+		return this.get<{ data: Homework[] }>(
+			`/homework/${homeworkId}/submissions`,
+		);
 	}
 }
 
