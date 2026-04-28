@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
 import * as crypto from 'crypto';
@@ -80,5 +80,74 @@ export class TeachersService {
     });
 
     return students.map((s) => ({ id: s.id, name: s.name }));
+  }
+
+  /**
+   * Retrieves details of a specific student enrolled with a teacher.
+   */
+  async getActiveEnrollmentOrFail(
+    teacherId: number,
+    studentId: number,
+  ): Promise<Partial<User>> {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        teacher_id: teacherId,
+        student_id: studentId,
+        deactivated_at: IsNull(),
+      },
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException('هذا الطالب غير مسجل لديك');
+    }
+
+    const student = await this.usersRepository.findOne({
+      where: { id: studentId, role: UserRole.STUDENT },
+      relations: ['parent'],
+    });
+
+    if (!student) {
+      throw new NotFoundException('لم يتم العثور على الطالب');
+    }
+
+    return {
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      phone: student.phone,
+      parent: student.parent
+        ? ({
+            id: student.parent.id,
+            name: student.parent.name,
+            phone: student.parent.phone,
+          } as User)
+        : undefined,
+    };
+  }
+
+  /**
+   * Removes a student from a teacher's class (deletes the enrollment).
+   */
+  async removeStudent(
+    teacherId: number,
+    studentId: number,
+  ): Promise<{ success: boolean; message: string }> {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: {
+        teacher_id: teacherId,
+        student_id: studentId,
+        deactivated_at: IsNull(),
+      },
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException('الطالب غير مسجل لديك');
+    }
+
+    enrollment.deactivated_at = new Date();
+    enrollment.deactivated_by = teacherId;
+    await this.enrollmentRepository.save(enrollment);
+
+    return { success: true, message: 'تم إلغاء تسجيل الطالب بنجاح.' };
   }
 }

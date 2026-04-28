@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Student } from "@/services/api/teachers";
 
@@ -9,12 +8,6 @@ interface StudentsTableProps {
 }
 
 export default function StudentsTable({ students }: StudentsTableProps) {
-	const [openActionId, setOpenActionId] = useState<number | null>(null);
-
-	const toggleActionMenu = (id: number) => {
-		setOpenActionId(openActionId === id ? null : id);
-	};
-
 	if (students.length === 0) {
 		return (
 			<div className="mt-20 flex flex-col items-center text-center max-w-sm mx-auto">
@@ -32,12 +25,12 @@ export default function StudentsTable({ students }: StudentsTableProps) {
 				<p className="text-on-surface-variant mb-8 font-body">
 					ابدأ في بناء مجتمعك التعليمي من خلال دعوة أول طالب لك الآن.
 				</p>
-				<Link
+				{/* <Link
 					href="/students/invite"
 					className="flex items-center justify-center bg-primary text-on-primary h-14 px-10 rounded-lg font-bold shadow-[0_8px_24px_rgba(26,115,232,0.25)] hover:-translate-y-0.5 active:scale-95 transition-all"
 				>
 					ابدأ بدعوة الطلاب
-				</Link>
+				</Link> */}
 			</div>
 		);
 	}
@@ -58,7 +51,7 @@ export default function StudentsTable({ students }: StudentsTableProps) {
 								<th className="pb-4 font-bold text-on-surface-variant px-4 text-center font-headline">
 									📊 الحالة
 								</th>
-								<th className="pb-4 font-bold text-on-surface-variant px-4 w-10"></th>
+								<th className="pb-4 font-bold text-on-surface-variant px-4 w-32"></th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-surface-container-high">
@@ -92,45 +85,43 @@ export default function StudentsTable({ students }: StudentsTableProps) {
 												{isActive ? "نشط" : "لم ينضم بعد"}
 											</span>
 										</td>
-										<td className="py-5 px-4 text-left relative">
-											<button
-												onClick={() => toggleActionMenu(student.id)}
-												className="p-2 hover:bg-surface-container-highest rounded-full transition-colors text-outline active:scale-95"
-											>
-												<span
-													className="material-symbols-outlined"
-													data-icon="more_vert"
+										<td className="py-5 px-4">
+											<div className="flex items-center justify-end gap-2">
+												<Link
+													href={`/students/${student.id}`}
+													title="تفاصيل الطالب"
+													className="p-2 hover:bg-surface-container-highest rounded-full transition-colors text-outline active:scale-95 flex items-center justify-center"
 												>
-													more_vert
-												</span>
-											</button>
-
-											{openActionId === student.id && (
-												<div className="absolute left-6 top-14 w-48 bg-surface-container-lowest rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-outline-variant/20 py-2 z-50 flex flex-col items-stretch text-right animate-in fade-in slide-in-from-top-2 duration-150">
-													<Link
-														href={`/students/${student.id}`}
-														className="px-4 py-2.5 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-3 w-full text-right font-body"
+													<span
+														className="material-symbols-outlined text-[20px]"
+														data-icon="visibility"
 													>
-														<span className="material-symbols-outlined text-[18px]">
-															visibility
-														</span>
-														تفاصيل الطالب
-													</Link>
-													<button className="px-4 py-2.5 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-3 font-body">
-														<span className="material-symbols-outlined text-[18px]">
-															contact_mail
-														</span>
-														إعادة إرسال دعوة
-													</button>
-													<div className="h-px bg-outline-variant/20 my-1 w-full shrink-0"></div>
-													<button className="px-4 py-2.5 text-sm font-bold text-error hover:bg-error-container/50 transition-colors flex items-center gap-3 font-body">
-														<span className="material-symbols-outlined text-[18px]">
-															delete
-														</span>
-														حذف الطالب
-													</button>
-												</div>
-											)}
+														visibility
+													</span>
+												</Link>
+												<button
+													title="إعادة إرسال دعوة"
+													className="p-2 hover:bg-surface-container-highest rounded-full transition-colors text-outline active:scale-95 flex items-center justify-center"
+												>
+													<span
+														className="material-symbols-outlined text-[20px]"
+														data-icon="contact_mail"
+													>
+														contact_mail
+													</span>
+												</button>
+												<button
+													title="حذف الطالب"
+													className="p-2 hover:bg-error-container/50 hover:text-error rounded-full transition-colors text-outline active:scale-95 flex items-center justify-center"
+												>
+													<span
+														className="material-symbols-outlined text-[20px]"
+														data-icon="delete"
+													>
+														delete
+													</span>
+												</button>
+											</div>
 										</td>
 									</tr>
 								);

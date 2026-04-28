@@ -1,4 +1,12 @@
-import { Controller, Get, Param, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Req,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -60,6 +68,57 @@ export class TeachersController {
   async getMyStudents(@Req() req) {
     const teacherId = req.user.userId;
     return this.teachersService.getStudents(teacherId);
+  }
+
+  /**
+   * Retrieves details of a specific student enrolled with the currently authenticated teacher.
+   */
+  @Get('students/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
+  @ApiOperation({
+    summary:
+      'Get details of a specific student enrolled with the authenticated teacher',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the student details.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student not found or not enrolled with this teacher.',
+  })
+  async getStudentDetails(
+    @Req() req,
+    @Param('id', ParseIntPipe) studentId: number,
+  ) {
+    const teacherId = req.user.userId;
+    return this.teachersService.getActiveEnrollmentOrFail(teacherId, studentId);
+  }
+
+  /**
+   * Removes a student from the authenticated teacher's class.
+   */
+  @Delete('students/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
+  @ApiOperation({
+    summary: "Remove a student from the authenticated teacher's class",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Student removed successfully.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student not found or not enrolled with this teacher.',
+  })
+  async removeStudent(
+    @Req() req,
+    @Param('id', ParseIntPipe) studentId: number,
+  ) {
+    const teacherId = req.user.userId;
+    return this.teachersService.removeStudent(teacherId, studentId);
   }
 
   /**

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatNumber, normalizeTimeString, formatTimeUI } from "@/lib/format";
+import { formatNumber, normalizeTimeString, formatTimeUI, formatDate } from "@/lib/format";
 import { Group } from "@/services/api/groups";
 
 interface SessionCardProps {
@@ -89,6 +89,12 @@ export default function SessionCard({ group, onEdit }: SessionCardProps) {
 					<div
 						className={`flex items-center gap-4 text-sm font-medium ${isPrimary ? "text-on-surface-variant" : ""}`}
 					>
+						<span className="flex items-center gap-1">
+							<span className="material-symbols-outlined text-[18px]">
+								event
+							</span>{" "}
+							{formatDate(group.date, { day: "numeric", month: "long" })}
+						</span>
 						<span className="flex items-center gap-1">
 							<span className="material-symbols-outlined text-[18px]">
 								schedule
