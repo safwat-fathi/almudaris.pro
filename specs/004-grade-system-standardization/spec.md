@@ -5,6 +5,16 @@
 **Status**: Draft  
 **Input**: User description: "@grade-stage.md"
 
+## Clarifications
+
+### Session 2026-04-28
+- Q: How exactly should the system handle un-mappable historical records during the automated data migration? → A: Use an explicit "Unassigned" enum for stage/grade and flag for manual review.
+- Q: How should the system respond to invalid stage/year payloads from external integrations? → A: Reject the payload synchronously with a 400 Bad Request and descriptive validation error.
+- Q: Where should the string formatting into the canonical Arabic label occur? → A: Backend formats the string and returns it in the API response (e.g., `grade_label`).
+- Q: Can a group or session span multiple grades or stages simultaneously? → A: Strictly one stage and one year per Group/Session.
+- Q: How should the migration script handle existing student records where the grade field is completely empty or null? → A: Treat as un-mappable: assign the "Unassigned" enum state and flag for review.
+- Q: How should the database enforce valid grade-year ranges for each education stage? → A: Use a database CHECK constraint tying stage to allowed year ranges.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Student Profile Creation (Priority: P1)
@@ -52,8 +62,8 @@ As a teacher, I want to filter my students, groups, sessions, and homework assig
 
 ### Edge Cases
 
-- What happens if an external system integration attempts to send an invalid stage/year combination?
-- How does the system handle historical records that do not neatly fit into the new stage/year structure during the data migration process?
+- **Invalid External Integrations:** If an external system integration or API request attempts to send an invalid stage/year combination, the system will reject the payload synchronously with a 400 Bad Request and a descriptive validation error.
+- **Data Migration Error Handling:** Historical records that do not neatly fit into the new stage/year structure will be assigned an explicit "Unassigned" enum for stage and grade, and flagged for manual review to prevent data pollution.
 
 ## Requirements *(mandatory)*
 
@@ -63,16 +73,18 @@ As a teacher, I want to filter my students, groups, sessions, and homework assig
 - **FR-002**: System MUST restrict Primary stage selections to years 1 through 6.
 - **FR-003**: System MUST restrict Preparatory and Secondary stage selections to years 1 through 3.
 - **FR-004**: System MUST prevent users from saving invalid stage and year combinations.
-- **FR-005**: System MUST display the student's grade using the standardized Arabic format (e.g., "الصف الثالث الثانوي") across all user interfaces.
+- **FR-005**: System MUST display the student's grade using the standardized Arabic format (e.g., "الصف الثالث الثانوي") across all user interfaces, by utilizing a formatted label provided by the backend API.
 - **FR-006**: System MUST allow filtering of students, groups, sessions, and homework by education stage and specific year.
 - **FR-007**: System MUST automatically convert all existing student grade records to the new standardized format without data loss.
+- **FR-008**: System MUST enforce valid stage/year combinations at the database layer using a CHECK constraint: Primary permits years 1 through 6, while Preparatory and Secondary permit years 1 through 3.
 
 ### Key Entities
 
 - **Student**: Represents the learner, including their specific education stage and year.
-- **Group**: Represents a class cohort, which may be restricted to a specific stage and year.
-- **Session**: Represents a scheduled class, which may be targeted at a specific stage and year.
+- **Group**: Represents a class cohort, which MUST be strictly restricted to a single specific stage and year.
+- **Session**: Represents a scheduled class, which MUST be strictly targeted at a single specific stage and year.
 - **Homework**: Assignments targeted to students of a specific stage and year.
+- **Stage/Year Constraint**: Database constraint that rejects any stored stage/year combination outside the canonical Egyptian education ranges.
 
 ## Success Criteria *(mandatory)*
 
