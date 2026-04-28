@@ -29,7 +29,9 @@ export class HomeworkController {
   }
 
   @Get('group/:groupId')
-  @ApiOperation({ summary: 'Get all homework assignments for a specific group' })
+  @ApiOperation({
+    summary: 'Get all homework assignments for a specific group',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of homework assignments for the group.',
