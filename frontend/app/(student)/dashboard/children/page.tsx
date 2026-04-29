@@ -9,7 +9,9 @@ type Child = {
   id: number;
   name: string;
   email?: string;
-  grade_level?: string;
+  education_stage?: string;
+  education_year?: number;
+  grade_label?: string;
   image?: string;
 };
 

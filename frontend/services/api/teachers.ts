@@ -3,6 +3,9 @@ import { HTTPService } from "../base/HTTPService";
 export interface Student {
 	id: number;
 	name: string;
+	education_stage?: string;
+	education_year?: number;
+	grade_label?: string;
 }
 
 /**
@@ -17,8 +20,19 @@ class TeachersService extends HTTPService {
 	/**
 	 * Fetches all students enrolled with the authenticated teacher.
 	 */
-	async fetchStudents(): Promise<{ data: Student[] }> {
-		return this.get<{ data: Student[] }>("/teachers/students");
+	async fetchStudents(params?: {
+		education_stage?: string;
+		education_year?: number;
+	}): Promise<{ data: Student[] }> {
+		const query = new URLSearchParams();
+		if (params?.education_stage) {
+			query.set("education_stage", params.education_stage);
+		}
+		if (params?.education_year !== undefined) {
+			query.set("education_year", String(params.education_year));
+		}
+		const queryString = query.toString() ? `?${query.toString()}` : "";
+		return this.get<{ data: Student[] }>(`/teachers/students${queryString}`);
 	}
 
 	/**

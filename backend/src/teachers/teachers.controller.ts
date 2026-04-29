@@ -6,6 +6,7 @@ import {
   Req,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { TeachersService } from './teachers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -45,7 +47,7 @@ export class TeachersController {
     status: 401,
     description: 'Unauthorized if not authenticated or not a teacher.',
   })
-  async getMyInviteCode(@Req() req) {
+  async getMyInviteCode(@Req() req: { user: { userId: number } }) {
     const teacherId = req.user.userId; // Matches the payload from JwtStrategy
     const inviteCode = await this.teachersService.getInviteCode(teacherId);
     return { inviteCode };
@@ -65,9 +67,28 @@ export class TeachersController {
     description: 'Returns a list of students with their IDs and names.',
     schema: { example: [{ id: 1, name: 'Student Name' }] },
   })
-  async getMyStudents(@Req() req) {
+  @ApiQuery({
+    name: 'education_stage',
+    required: false,
+    enum: ['PRIMARY', 'PREPARATORY', 'SECONDARY', 'UNASSIGNED'],
+  })
+  @ApiQuery({ name: 'education_year', required: false, type: Number })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
+  async getMyStudents(
+    @Req() req: { user: { userId: number } },
+    @Query('education_stage')
+    educationStage?: 'PRIMARY' | 'PREPARATORY' | 'SECONDARY' | 'UNASSIGNED',
+    @Query('education_year') educationYear?: string,
+  ) {
     const teacherId = req.user.userId;
-    return this.teachersService.getStudents(teacherId);
+    return this.teachersService.getStudents(teacherId, {
+      education_stage: educationStage,
+      education_year:
+        educationYear !== undefined ? parseInt(educationYear, 10) : undefined,
+    });
   }
 
   /**
@@ -89,7 +110,7 @@ export class TeachersController {
     description: 'Student not found or not enrolled with this teacher.',
   })
   async getStudentDetails(
-    @Req() req,
+    @Req() req: { user: { userId: number } },
     @Param('id', ParseIntPipe) studentId: number,
   ) {
     const teacherId = req.user.userId;
@@ -114,7 +135,7 @@ export class TeachersController {
     description: 'Student not found or not enrolled with this teacher.',
   })
   async removeStudent(
-    @Req() req,
+    @Req() req: { user: { userId: number } },
     @Param('id', ParseIntPipe) studentId: number,
   ) {
     const teacherId = req.user.userId;

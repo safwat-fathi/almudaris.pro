@@ -2,47 +2,81 @@
 
 ## Prerequisites
 
-- Work from branch `004-grade-system-standardization`.
-- Use existing `pnpm` workflows in `backend` and `frontend`.
-- Do not add dependencies unless a later implementation task identifies a necessary gap.
+- Backend dependencies installed.
+- Frontend dependencies installed.
+- Database available for migration checks.
+- No new spec files should be added for this feature.
 
-## Implementation Order
+## Manual Verification Flow
 
-1. Add shared backend grade constants/utilities for valid stages, valid years, validation, and Arabic label formatting.
-2. Update child/student DTOs, entities, services, and controllers to accept structured grade fields and return `grade_label`.
-3. Add schema/data migration for student legacy grade conversion, unassigned records, manual-review flag, and database CHECK constraint.
-4. Update group/session and homework entities, DTOs, services, filters, and Swagger docs to target exactly one stage/year.
-5. Update frontend API models/services and BFF functions to carry `education_stage`, `education_year`, and `grade_label`.
-6. Update student forms, teacher filters, dashboard cards, group/session pages, and homework pages to render backend labels and stage-aware year options.
-7. Verify invalid stage/year payloads return 400 at the API boundary and cannot persist through the database constraint.
+### 1. Verify Stage/Year Rules
 
-## Verification
+1. Create a student with Primary Year 6.
+2. Confirm save succeeds and response includes `grade_label = الصف السادس الابتدائي`.
+3. Try Primary Year 7.
+4. Confirm save fails with a descriptive validation error.
+5. Try Secondary Year 3.
+6. Confirm save succeeds and response includes `grade_label = الصف الثالث الثانوي`.
 
-Backend:
+### 2. Verify Legacy Migration Behavior
+
+1. Prepare legacy student records with recognized and unrecognized grade values.
+2. Run the migration in a safe environment.
+3. Confirm recognized values map to canonical stage/year pairs.
+4. Confirm unrecognized, empty, and null values map to `UNASSIGNED`, year `0`, and review flag true.
+5. Confirm database constraints accept only valid stage/year pairs, including `(UNASSIGNED, 0)`.
+
+### 3. Verify Teacher Stage Assignment
+
+1. Try saving a teacher with no assigned stages.
+2. Confirm save is blocked.
+3. Assign Secondary only.
+4. Confirm save succeeds.
+5. Assign Secondary and Preparatory.
+6. Confirm save succeeds and both stages display correctly.
+
+### 4. Verify Group Targeting
+
+1. Select a teacher assigned to Secondary only.
+2. Create a group with Secondary Year 3.
+3. Confirm save succeeds.
+4. Attempt to create a Preparatory group for the same teacher.
+5. Confirm save is blocked with a teacher-stage mismatch error.
+6. Attempt to save a group without stage or year.
+7. Confirm save is blocked and missing fields are identified.
+
+### 5. Verify Display Consistency
+
+1. View student profiles, parent dashboards, teacher student lists, group/session pages, and homework pages.
+2. Confirm all user-facing grade text uses canonical Arabic labels from responses.
+3. Confirm there are 0 visible raw grade strings such as `Grade 3` or `3rd secondary`.
+
+### 6. Verify Filtering
+
+1. Filter students by Secondary Year 3.
+2. Confirm only Secondary Year 3 records appear.
+3. Filter groups/sessions by Secondary Year 3.
+4. Confirm only matching groups/sessions appear.
+5. Filter homework by Secondary Year 3.
+6. Confirm only matching homework appears.
+
+## Verification Commands
+
+Run backend lint:
 
 ```bash
-cd backend
 pnpm run lint:ci
 ```
 
-Frontend:
+Run frontend lint:
 
 ```bash
-cd frontend
 pnpm run lint
 ```
 
-Manual checks:
+## Expected Outcome
 
-- Creating a Primary student only offers/saves years 1-6.
-- Creating a Preparatory or Secondary student only offers/saves years 1-3.
-- Student, group/session, and homework responses include canonical Arabic `grade_label`.
-- Student/group/session/homework lists filter correctly by stage and year.
-- Invalid external/API payloads return 400 synchronously.
-- Empty, null, or un-mappable legacy grades migrate to `UNASSIGNED`, `education_year = 0`, and `grade_needs_review = true`.
-
-## Rollout Notes
-
-- Preserve raw legacy grade values during migration for auditability and manual correction.
-- Keep frontend display dependent on backend `grade_label`; do not duplicate Arabic formatting in components.
-- Avoid client-side pages; keep data fetching in server components, Server Actions, API services, and BFF services.
+- Students, teachers, groups, sessions, and homework all use canonical stage/year semantics.
+- Teacher stage assignments constrain group creation.
+- Backend responses provide canonical Arabic labels.
+- Frontend forms validate stage/year and teacher stage data before submission.

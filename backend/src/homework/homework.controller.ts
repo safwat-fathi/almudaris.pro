@@ -6,11 +6,19 @@ import {
   Patch,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 import { HomeworkService } from './homework.service';
 import { CreateHomeworkDto } from './dto/create-homework.dto';
 import { Homework } from './entities/homework.entity';
+import { EducationStage } from '../common/grades/grade-system';
 
 @ApiTags('homework')
 @Controller('homework')
@@ -19,17 +27,50 @@ export class HomeworkController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new homework assignment' })
+  @ApiBody({ type: CreateHomeworkDto })
   @ApiResponse({
     status: 201,
     description: 'The homework has been successfully created.',
     type: Homework,
   })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
   create(@Body() createHomeworkDto: CreateHomeworkDto) {
     return this.homeworkService.create(createHomeworkDto);
   }
 
+  @Get()
+  @ApiOperation({
+    summary: 'Get all homework assignments with optional stage/year filters',
+  })
+  @ApiQuery({ name: 'education_stage', required: false, enum: EducationStage })
+  @ApiQuery({ name: 'education_year', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'List of homework assignments.',
+    type: [Homework],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
+  findAll(
+    @Query('education_stage') educationStage?: EducationStage,
+    @Query('education_year') educationYear?: string,
+  ) {
+    return this.homeworkService.findAll({
+      education_stage: educationStage,
+      education_year:
+        educationYear !== undefined ? parseInt(educationYear, 10) : undefined,
+    });
+  }
+
   @Get('group/:groupId')
-  @ApiOperation({ summary: 'Get all homework assignments for a specific group' })
+  @ApiOperation({
+    summary: 'Get all homework assignments for a specific group',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of homework assignments for the group.',

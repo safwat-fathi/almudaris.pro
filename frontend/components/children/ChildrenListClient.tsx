@@ -128,9 +128,9 @@ export function ChildrenListClient({
                     {child.email}
                   </p>
                 )}
-                {child.grade_level && (
+                {child.grade_label && (
                   <p className="font-body text-primary font-semibold text-sm mt-0.5">
-                    {child.grade_level}
+                    {child.grade_label}
                   </p>
                 )}
               </div>

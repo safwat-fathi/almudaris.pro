@@ -78,13 +78,18 @@ export default function SessionCard({ group, onEdit }: SessionCardProps) {
 				<div
 					className={`space-y-2 pr-2 min-w-0 flex-1 ${!isPrimary ? "text-on-surface/60" : ""}`}
 				>
-					<div className="flex items-center gap-2 overflow-hidden">
+					<div className="flex flex-col gap-1 overflow-hidden">
 						<h3
 							className="font-headline font-bold text-lg line-clamp-2"
 							title={group.title || "حصة تعليمية"}
 						>
 							{group.title || "حصة تعليمية"}
 						</h3>
+						{group.grade_label && (
+							<span className="text-sm text-primary font-medium">
+								{group.grade_label}
+							</span>
+						)}
 					</div>
 					<div
 						className={`flex items-center gap-4 text-sm font-medium ${isPrimary ? "text-on-surface-variant" : ""}`}

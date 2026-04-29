@@ -1,122 +1,120 @@
 # Data Model: Grade System Standardization
 
-## Shared Grade Concepts
+## EducationStage
 
-### EducationStage
+Canonical stage enum used across students, teachers, groups, sessions, and homework.
 
-Represents the canonical stage bucket for Egyptian education levels.
+### Values
 
-| Value | Arabic Display | Allowed Years |
-|-------|----------------|---------------|
-| `PRIMARY` | الابتدائي | 1-6 |
-| `PREPARATORY` | الإعدادي | 1-3 |
-| `SECONDARY` | الثانوي | 1-3 |
-| `UNASSIGNED` | غير محدد | unassigned sentinel only |
+- `PRIMARY`: Egyptian primary stage, years 1 through 6.
+- `PREPARATORY`: Egyptian preparatory stage, years 1 through 3.
+- `SECONDARY`: Egyptian secondary stage, years 1 through 3.
+- `UNASSIGNED`: Migration/manual-review state, year 0 only.
 
-### EducationYear
+### Validation Rules
 
-Integer year within the selected stage.
+- `PRIMARY` permits `education_year` 1-6.
+- `PREPARATORY` permits `education_year` 1-3.
+- `SECONDARY` permits `education_year` 1-3.
+- `UNASSIGNED` permits `education_year` 0 only.
+- User-facing creation flows should not expose `UNASSIGNED` as a normal selectable grade.
 
-| Value | Arabic Ordinal |
-|-------|----------------|
-| `1` | الأول |
-| `2` | الثاني |
-| `3` | الثالث |
-| `4` | الرابع |
-| `5` | الخامس |
-| `6` | السادس |
-| `0` | غير محدد |
+## Student
 
-### Grade Label
+Represents a learner.
 
-`grade_label` is a derived API field formatted by the backend.
+### Fields
 
-Examples:
+- `education_stage`: One `EducationStage` value.
+- `education_year`: Integer year within the selected stage.
+- `grade_label`: Canonical Arabic label returned by backend responses.
+- `legacy_grade`: Preserved historical raw grade value, when one existed.
+- `grade_needs_review`: Boolean marker for un-mappable or manually reviewed legacy data.
 
-- `PRIMARY` + `4` => `الصف الرابع الابتدائي`
-- `PREPARATORY` + `2` => `الصف الثاني الإعدادي`
-- `SECONDARY` + `3` => `الصف الثالث الثانوي`
-- `UNASSIGNED` + `0` => `غير محدد - يحتاج مراجعة`
+### Relationships
 
-## Entity Updates
+- Students can be filtered by `education_stage` and `education_year`.
+- Students can be assigned to groups matching their stage/year according to existing business rules.
 
-### Student / Child
+## Teacher
 
-Existing learner record managed under `backend/src/children`.
+Represents an instructor and their allowed education stages.
 
-Fields to add or standardize:
+### Fields
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `education_stage` | EducationStage | Yes | Defaults to `UNASSIGNED` only during legacy migration or explicit manual-review flows |
-| `education_year` | integer | Yes | 1-6 for Primary, 1-3 for Preparatory/Secondary, 0 for Unassigned |
-| `grade_label` | string | API response only | Derived by backend formatter, not stored unless an existing response pattern requires it |
-| `legacy_grade` | text nullable | No | Preserves old raw grade value during migration |
-| `grade_needs_review` | boolean | Yes | True for un-mappable or empty legacy values |
+- `assigned_stages`: One or more `EducationStage` values excluding `UNASSIGNED` for normal active teachers.
 
-Validation rules:
+### Validation Rules
 
-- New create/update payloads must reject invalid combinations with 400.
-- New create/update payloads should not use `UNASSIGNED` unless an explicit administrative/manual-review path exists.
-- Legacy empty/null/un-mappable grade values migrate to `UNASSIGNED`, `education_year = 0`, `grade_needs_review = true`.
+- A teacher must have at least one assigned education stage before creating or managing groups.
+- A teacher may be assigned multiple stages, such as `SECONDARY` and `PREPARATORY`.
+- Group creation/update must reject any stage not included in the teacher's `assigned_stages`.
 
-### Group / Session
+## Group
 
-Existing teaching cohort/session record under `backend/src/groups`.
+Represents a class cohort.
 
-Fields to add or standardize:
+### Fields
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `education_stage` | EducationStage | Yes | Exactly one stage per group/session |
-| `education_year` | integer | Yes | Exactly one year per group/session |
-| `grade_label` | string | API response only | Derived by backend formatter |
+- `teacher_id`: Teacher responsible for the group.
+- `education_stage`: Exactly one `EducationStage` value.
+- `education_year`: Exactly one valid year for the selected stage.
+- `grade_label`: Canonical Arabic label returned by backend responses.
 
-Validation rules:
+### Validation Rules
 
-- A group/session cannot span multiple stages or years.
-- Filters may include `education_stage`, `education_year`, or both.
-- Invalid filter combinations return 400 instead of silently ignoring invalid criteria.
+- A group must have both stage and year before save.
+- A group cannot span multiple stages or years.
+- A group stage must be included in the selected teacher's `assigned_stages`.
+- `UNASSIGNED` is allowed only for migration/manual-review records, not normal group creation.
 
-### Homework
+## Session
 
-Existing assignment record under `backend/src/homework`.
+Represents a scheduled class.
 
-Fields to add or standardize:
+### Fields
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `education_stage` | EducationStage | Yes | Target stage for assignment |
-| `education_year` | integer | Yes | Target year for assignment |
-| `grade_label` | string | API response only | Derived by backend formatter |
+- `group_id`: Owning group.
+- `education_stage`: Derived from the owning group unless existing implementation requires explicit persistence.
+- `education_year`: Derived from the owning group unless existing implementation requires explicit persistence.
+- `grade_label`: Canonical Arabic label from the derived or persisted stage/year.
 
-Validation rules:
+### Validation Rules
 
-- Homework must target exactly one stage/year.
-- Homework list filters must use the same backend validation as students and groups.
+- A session is strictly targeted to one stage/year.
+- If a session derives stage/year from Group, it must not independently diverge from the Group.
 
-## Database Constraints
+## Homework
 
-Apply a CHECK constraint to every table that stores `education_stage` and `education_year`:
+Represents assignments targeted to a specific stage/year.
 
-```sql
-(
-  (education_stage = 'PRIMARY' AND education_year BETWEEN 1 AND 6)
-  OR (education_stage IN ('PREPARATORY', 'SECONDARY') AND education_year BETWEEN 1 AND 3)
-  OR (education_stage = 'UNASSIGNED' AND education_year = 0)
-)
-```
+### Fields
 
-Recommended indexes:
+- `education_stage`: Exactly one `EducationStage` value.
+- `education_year`: Exactly one valid year for the selected stage.
+- `grade_label`: Canonical Arabic label returned by backend responses.
 
-- `(education_stage, education_year)` on students/children for roster filtering.
-- `(teacher_id, education_stage, education_year)` where teacher-scoped lists are common.
-- `(education_stage, education_year)` on groups/sessions and homework for assignment/session filtering.
+### Validation Rules
 
-## Migration Behavior
+- Homework can be filtered by stage/year.
+- Homework must reject invalid stage/year combinations.
+- Existing unmappable homework records use `UNASSIGNED` and year 0 during migration.
 
-- Map known legacy values to the nearest canonical `education_stage` and `education_year` only when the mapping is exact.
-- Preserve the raw legacy grade text in `legacy_grade` when available.
-- Assign `UNASSIGNED` and `education_year = 0` for empty, null, or un-mappable values.
-- Set `grade_needs_review = true` for every unassigned migrated record.
-- Migration must be reversible enough to avoid data loss by retaining raw legacy values.
+## Stage/Year Constraint
+
+Database-level rule enforcing the canonical stage/year matrix.
+
+### Rules
+
+- `(PRIMARY, 1-6)` is valid.
+- `(PREPARATORY, 1-3)` is valid.
+- `(SECONDARY, 1-3)` is valid.
+- `(UNASSIGNED, 0)` is valid only for migration/manual-review data.
+- All other pairs are invalid.
+
+## State Transitions
+
+- Legacy raw grade → mapped canonical stage/year when confidently recognized.
+- Legacy raw grade → `UNASSIGNED`, year 0, review flag true when not confidently recognized.
+- Teacher without assigned stages → setup required → active for group creation once at least one stage is assigned.
+- Group without stage/year during migration → `UNASSIGNED`, year 0 → manually reviewed into a canonical stage/year.

@@ -1,49 +1,42 @@
-# API Contract: Grade System Standardization
+# Contract: Grade System API
 
-## Shared Types
+## Shared Concepts
 
-```ts
-type EducationStage = 'PRIMARY' | 'PREPARATORY' | 'SECONDARY' | 'UNASSIGNED';
+### EducationStage
 
-type GradeTarget = {
-  education_stage: EducationStage;
-  education_year: number;
-  grade_label: string;
-};
-```
+Allowed values:
 
-Valid payload combinations:
+- `PRIMARY`
+- `PREPARATORY`
+- `SECONDARY`
+- `UNASSIGNED`
 
-- `PRIMARY`: `education_year` 1 through 6
-- `PREPARATORY`: `education_year` 1 through 3
-- `SECONDARY`: `education_year` 1 through 3
-- `UNASSIGNED`: `education_year` 0, migration/manual-review records only
+### Stage/Year Matrix
 
-Invalid combinations return `400 Bad Request` with a descriptive validation error.
+| Stage | Allowed Years |
+|-------|---------------|
+| `PRIMARY` | 1, 2, 3, 4, 5, 6 |
+| `PREPARATORY` | 1, 2, 3 |
+| `SECONDARY` | 1, 2, 3 |
+| `UNASSIGNED` | 0 |
 
-## Students / Children
+Normal user-facing create/update flows must not allow `UNASSIGNED` unless an explicit review/admin flow is implemented.
 
-### Create Student
+## Student Contracts
 
-`POST /children`
-
-Request additions:
+### Create or Update Student Payload
 
 ```json
 {
-  "name": "Ahmed Ali",
-  "email": "ahmed@child.com",
   "education_stage": "SECONDARY",
   "education_year": 3
 }
 ```
 
-Response additions:
+### Student Response Fields
 
 ```json
 {
-  "id": 12,
-  "name": "Ahmed Ali",
   "education_stage": "SECONDARY",
   "education_year": 3,
   "grade_label": "الصف الثالث الثانوي",
@@ -51,128 +44,110 @@ Response additions:
 }
 ```
 
-### Update Student Grade
+### Invalid Student Payload Response
 
-`PATCH /children/:id`
+- Status: `400 Bad Request`
+- Message includes the invalid field and allowed stage/year rule.
 
-Request additions:
+## Teacher Contracts
+
+### Teacher Assigned Stages Payload
 
 ```json
 {
-  "education_stage": "PRIMARY",
-  "education_year": 4
+  "assigned_stages": ["SECONDARY", "PREPARATORY"]
 }
 ```
 
-Response additions:
+### Teacher Validation Rules
+
+- `assigned_stages` must contain at least one stage.
+- `UNASSIGNED` is not valid for an active teacher assignment.
+- Duplicate stages are rejected or normalized into a unique list.
+
+### Teacher Response Fields
 
 ```json
 {
-  "id": 12,
-  "education_stage": "PRIMARY",
-  "education_year": 4,
-  "grade_label": "الصف الرابع الابتدائي",
-  "grade_needs_review": false
+  "assigned_stages": ["SECONDARY", "PREPARATORY"]
 }
 ```
 
-### List Students With Filters
+## Group Contracts
 
-`GET /children?education_stage=SECONDARY&education_year=3`
-
-Behavior:
-
-- Returns only students matching both filters.
-- If `education_year` is invalid for `education_stage`, returns 400.
-- If only `education_stage` is provided, returns all valid years for that stage.
-
-## Groups / Sessions
-
-### Create Group/Session
-
-`POST /groups`
-
-Request additions:
+### Create or Update Group Payload
 
 ```json
 {
-  "title": "ثالثة ثانوي - مراجعة",
-  "date": "2026-05-01",
-  "start_time": "16:00",
-  "duration_minutes": 90,
-  "location_type": "Online",
+  "teacher_id": 12,
   "education_stage": "SECONDARY",
   "education_year": 3
 }
 ```
 
-Response additions:
+### Group Response Fields
 
 ```json
 {
-  "id": 44,
+  "teacher_id": 12,
   "education_stage": "SECONDARY",
   "education_year": 3,
   "grade_label": "الصف الثالث الثانوي"
 }
 ```
 
-### List Groups/Sessions With Filters
+### Group Validation Rules
 
-`GET /groups?education_stage=PRIMARY&education_year=6`
+- `education_stage` is required.
+- `education_year` is required.
+- The stage/year pair must be valid.
+- The group stage must be included in the selected teacher's assigned stages.
 
-Behavior:
+### Teacher Stage Mismatch Response
 
-- Returns only groups/sessions targeting the selected stage/year.
-- Rejects impossible stage/year combinations with 400.
+- Status: `400 Bad Request`
+- Message explains that the selected teacher is not assigned to the requested education stage.
 
-## Homework
+## List Filter Contracts
 
-### Create Homework
+### Query Parameters
 
-`POST /homework`
-
-Request additions:
-
-```json
-{
-  "title": "واجب الدرس الأول",
-  "education_stage": "PREPARATORY",
-  "education_year": 2
-}
+```text
+education_stage=SECONDARY&education_year=3
 ```
 
-Response additions:
+### Filter Validation Rules
 
-```json
-{
-  "id": 27,
-  "title": "واجب الدرس الأول",
-  "education_stage": "PREPARATORY",
-  "education_year": 2,
-  "grade_label": "الصف الثاني الإعدادي"
-}
-```
+- `education_stage` and `education_year` can be provided together to filter lists.
+- Invalid stage/year pairs return `400 Bad Request`.
+- Student, Group/Session, and Homework list responses include only matching records.
 
-### List Homework With Filters
+## Frontend Form Contract
 
-`GET /homework?education_stage=PREPARATORY&education_year=2`
+### Student Form
 
-Behavior:
+- Stage selector controls available year options.
+- Submitted payload includes `education_stage` and `education_year`.
+- Zod validation rejects impossible pairs before submission proceeds.
 
-- Returns homework matching the selected target grade.
-- Rejects invalid filter combinations with 400.
+### Teacher Form
 
-## Validation Error Shape
+- Teacher stage selector requires at least one stage.
+- Stage options exclude `UNASSIGNED`.
+- Multiple stage selections are allowed.
 
-Use the repository's existing validation exception format. The response must clearly identify the invalid pair.
+### Group Form
 
-Example:
+- Teacher selection determines allowed group stages.
+- Group stage is required.
+- Group year is required.
+- Year options update based on selected group stage.
+- Saving is blocked when stage is not assigned to the selected teacher.
 
-```json
-{
-  "statusCode": 400,
-  "message": "Invalid education_stage/education_year combination: PRIMARY only supports years 1 through 6.",
-  "error": "Bad Request"
-}
-```
+### Add Homework Sheet
+
+- `frontend/components/homework/AddHomeWorkSheet.tsx` must create homework using the selected group's grade context.
+- Submitted homework payload includes `group_id` and must preserve or submit the group's `education_stage` and `education_year` according to backend contract requirements.
+- The sheet blocks submission when group grade context is unavailable.
+- The sheet displays canonical Arabic grade context with backend-provided `grade_label` when grade context is shown.
+- Zod validation rejects missing or impossible homework stage/year targeting before submission proceeds.

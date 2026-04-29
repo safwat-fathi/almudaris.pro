@@ -46,7 +46,7 @@ export default function StudentsTable({ students }: StudentsTableProps) {
 									👤 الاسم
 								</th>
 								<th className="pb-4 font-bold text-on-surface-variant px-4 font-headline">
-									📱 الهاتف
+									🎓 المرحلة
 								</th>
 								<th className="pb-4 font-bold text-on-surface-variant px-4 text-center font-headline">
 									📊 الحالة
@@ -75,9 +75,9 @@ export default function StudentsTable({ students }: StudentsTableProps) {
 												</span>
 											</div>
 										</td>
-										{/* <td className="py-5 px-4 font-body tracking-wider text-on-surface-variant" dir="ltr">
-                      {phone}
-                    </td> */}
+										<td className="py-5 px-4 font-body tracking-wider text-on-surface-variant text-right">
+											{student.grade_label || "غير محدد"}
+										</td>
 										<td className="py-5 px-4 text-center">
 											<span
 												className={`px-4 py-1.5 rounded-full text-sm font-bold tracking-wide ${isActive ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container-high text-on-surface-variant"}`}

@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { LocationType } from '../entities/group.entity';
+import { EducationStage } from '../../common/grades/grade-system';
 
 /** Edit scope for recurring groups */
 export enum EditScope {
@@ -66,6 +67,19 @@ export class UpdateGroupDto {
   @IsString()
   @IsOptional()
   title?: string;
+
+  @ApiPropertyOptional({
+    enum: EducationStage,
+    example: EducationStage.SECONDARY,
+  })
+  @IsEnum(EducationStage)
+  @IsOptional()
+  education_stage?: EducationStage;
+
+  @ApiPropertyOptional({ example: 3 })
+  @IsInt()
+  @IsOptional()
+  education_year?: number;
 
   @ApiPropertyOptional({
     enum: EditScope,

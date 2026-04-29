@@ -32,22 +32,25 @@ export interface GroupStudent {
 
 export interface Group {
 	id: number;
-	teacher_id: number;
 	title?: string;
 	date: string;
 	start_time: string;
 	end_time: string;
 	duration_minutes: number;
-	status: GroupStatus;
-	location_type: LocationType;
+	status: "Scheduled" | "Completed" | "Cancelled";
+	location_type: "Online" | "Physical";
 	location_link?: string;
 	location_place?: string;
 	recurring_series_id?: number;
 	notes?: string;
+	teacher_id: number;
 	created_by_id: number;
-	students: GroupStudent[];
 	created_at: string;
 	updated_at: string;
+	students?: GroupStudent[];
+	education_stage?: string;
+	education_year?: number;
+	grade_label?: string;
 }
 
 export interface PaginatedGroups {
@@ -73,6 +76,8 @@ export interface FetchGroupsParams {
 	to?: string;
 	status?: GroupStatus;
 	student_id?: number;
+	education_stage?: string;
+	education_year?: number;
 	page?: number;
 	limit?: number;
 }
@@ -107,6 +112,10 @@ class GroupsService extends HTTPService {
 		if (params.status) query.append("status", params.status);
 		if (params.student_id)
 			query.append("student_id", params.student_id.toString());
+		if (params.education_stage)
+			query.append("education_stage", params.education_stage);
+		if (params.education_year !== undefined)
+			query.append("education_year", params.education_year.toString());
 		if (params.page !== undefined) query.append("page", params.page.toString());
 		if (params.limit !== undefined)
 			query.append("limit", params.limit.toString());

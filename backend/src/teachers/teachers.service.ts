@@ -2,12 +2,18 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
 import * as crypto from 'crypto';
+import {
+  EducationStage,
+  formatGradeLabel,
+  isValidGrade,
+} from '../common/grades/grade-system';
 
 @Injectable()
 export class TeachersService {
@@ -64,7 +70,29 @@ export class TeachersService {
    */
   async getStudents(
     teacherId: number,
-  ): Promise<{ id: number; name: string }[]> {
+    filters?: {
+      education_stage?: EducationStage;
+      education_year?: number;
+    },
+  ): Promise<
+    {
+      id: number;
+      name: string;
+      education_stage: EducationStage;
+      education_year: number;
+      grade_label: string;
+    }[]
+  > {
+    if (
+      filters?.education_stage !== undefined &&
+      filters?.education_year !== undefined &&
+      !isValidGrade(filters.education_stage, filters.education_year)
+    ) {
+      throw new BadRequestException(
+        `Invalid education_stage/education_year combination.`,
+      );
+    }
+
     const enrollments = await this.enrollmentRepository.find({
       where: { teacher_id: teacherId },
     });
@@ -74,12 +102,28 @@ export class TeachersService {
     }
 
     const studentIds = enrollments.map((e) => e.student_id);
+
     const students = await this.usersRepository.find({
-      where: { id: In(studentIds), role: UserRole.STUDENT },
-      select: ['id', 'name'],
+      where: {
+        id: In(studentIds),
+        role: UserRole.STUDENT,
+        ...(filters?.education_stage !== undefined
+          ? { education_stage: filters.education_stage }
+          : {}),
+        ...(filters?.education_year !== undefined
+          ? { education_year: filters.education_year }
+          : {}),
+      },
+      select: ['id', 'name', 'education_stage', 'education_year'],
     });
 
-    return students.map((s) => ({ id: s.id, name: s.name }));
+    return students.map((s) => ({
+      id: s.id,
+      name: s.name,
+      education_stage: s.education_stage,
+      education_year: s.education_year,
+      grade_label: formatGradeLabel(s.education_stage, s.education_year),
+    }));
   }
 
   /**

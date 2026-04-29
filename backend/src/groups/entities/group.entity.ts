@@ -7,11 +7,15 @@ import {
   JoinColumn,
   BeforeInsert,
   BeforeUpdate,
+  AfterLoad,
+  Check,
+  Index,
 } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { RecurringSeries } from './recurring-series.entity';
 import { GroupStudent } from './group-student.entity';
+import { EducationStage, formatGradeLabel } from '../../common/grades/grade-system';
 
 /** Group status enum */
 export enum GroupStatus {
@@ -31,6 +35,12 @@ export enum LocationType {
  * Times are stored in UTC. `end_time` is auto-computed from `start_time + duration_minutes`.
  */
 @Entity('groups')
+@Check(`(
+  ("education_stage" = 'PRIMARY' AND "education_year" BETWEEN 1 AND 6)
+  OR ("education_stage" IN ('PREPARATORY', 'SECONDARY') AND "education_year" BETWEEN 1 AND 3)
+  OR ("education_stage" = 'UNASSIGNED' AND "education_year" = 0)
+)`)
+@Index(['education_stage', 'education_year'])
 export class Group extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -76,6 +86,16 @@ export class Group extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   location_place?: string;
 
+  @Column({
+    type: 'enum',
+    enum: EducationStage,
+    default: EducationStage.UNASSIGNED,
+  })
+  education_stage: EducationStage;
+
+  @Column({ type: 'int', default: 0 })
+  education_year: number;
+
   @Column({ nullable: true })
   recurring_series_id?: number;
 
@@ -111,6 +131,17 @@ export class Group extends BaseEntity {
       const endHours = Math.floor(totalMinutes / 60) % 24;
       const endMinutes = totalMinutes % 60;
       this.end_time = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+    }
+  }
+
+  grade_label?: string;
+
+  @AfterLoad()
+  @BeforeInsert()
+  @BeforeUpdate()
+  computeGradeLabel() {
+    if (this.education_stage !== undefined && this.education_year !== undefined) {
+      this.grade_label = formatGradeLabel(this.education_stage, this.education_year);
     }
   }
 }

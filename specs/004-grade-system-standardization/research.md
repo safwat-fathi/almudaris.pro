@@ -1,37 +1,57 @@
 # Research: Grade System Standardization
 
-## Decision: Backend-Owned Canonical Grade Model
+## Decision: Backend-owned canonical grade model
 
-- **Decision**: Represent grade identity with `education_stage` and `education_year`, and expose a derived `grade_label` from the backend.
-- **Rationale**: The spec requires one canonical Arabic label everywhere and explicitly says formatting belongs in API responses. Centralizing this avoids duplicated translation/ordinal logic across Next.js pages, server actions, and external integrations.
-- **Alternatives considered**: Frontend label formatting was rejected because it risks inconsistent labels; storing only the final Arabic label was rejected because filtering and validation need structured fields.
+**Decision**: Centralize `EducationStage`, allowed-year rules, validation helpers, and Arabic label formatting in a backend shared grade module.
 
-## Decision: Explicit Unassigned State For Migration Failures
+**Rationale**: The backend is the source of truth for persistence constraints, API validation, and `grade_label` responses. This prevents frontend-generated labels from drifting across dashboards, filters, and integrations.
 
-- **Decision**: Use explicit unassigned values for legacy records that cannot map cleanly, plus a boolean/manual-review marker and optional raw legacy grade preservation.
-- **Rationale**: This satisfies the clarified migration behavior while preventing invalid or guessed data from polluting filters and reports.
-- **Alternatives considered**: Rejecting migration rows was rejected because the requirement says no data loss; guessing nearest grade was rejected because it can misclassify students.
+**Alternatives considered**: Frontend-owned labels were rejected because requirements explicitly require backend-provided formatted labels. Per-feature duplicated helpers were rejected because they would create inconsistent validation.
 
-## Decision: Database CHECK Constraint For Valid Stage/Year Ranges
+## Decision: Teacher assignments are stage-level permissions
 
-- **Decision**: Enforce valid combinations in PostgreSQL with a CHECK constraint: Primary years 1-6, Preparatory/Secondary years 1-3, and Unassigned paired only with an unassigned year/sentinel value.
-- **Rationale**: Application validation alone cannot protect direct database writes, migrations, or future integrations. A CHECK constraint directly satisfies FR-008.
-- **Alternatives considered**: Lookup table normalization was rejected for the initial phase because the valid set is tiny and static; frontend-only validation was rejected because external API payloads must be blocked synchronously by the backend.
+**Decision**: Teachers are assigned one or more broad education stages, not exact stage/year combinations.
 
-## Decision: Shared Backend Grade Utility
+**Rationale**: The clarified business examples are stage-level: `مدرس ثانوي` or `مدرس ثانوي و اعدادي`. Stage-level permissions are simpler for teachers and admins while still allowing each Group to select exactly one stage/year.
 
-- **Decision**: Add a small shared backend utility/constant module for stage values, valid years, validation, and Arabic label formatting.
-- **Rationale**: Students, groups/sessions, and homework all need identical rules. A small utility keeps behavior centralized without introducing a new dependency.
-- **Alternatives considered**: Per-module duplicated validators were rejected due to drift risk; a new package/library was rejected because repository guidelines discourage unnecessary dependencies.
+**Alternatives considered**: Exact stage/year teacher permissions were rejected as too granular for the requested workflow. Optional year restrictions were deferred because no current requirement needs them.
 
-## Decision: Server-Driven Frontend Selectors And Filters
+## Decision: Groups store exact stage/year and validate against teacher stages
 
-- **Decision**: Frontend forms should submit structured stage/year values through Server Actions or server-rendered query params, then render backend-provided `grade_label` in cards, tables, and dashboards.
-- **Rationale**: This matches the constitution's server-driven frontend rule and keeps external-visible behavior tied to API responses.
-- **Alternatives considered**: Client-side page state as the source of truth was rejected because client-side pages are prohibited; client-only filters were rejected because backend list endpoints need authoritative filtering.
+**Decision**: Every Group stores exactly one `education_stage` and one `education_year`; group save operations reject a stage outside the assigned teacher stages.
 
-## Decision: No New Dependencies
+**Rationale**: Groups are the scheduling and organization unit. Exact group targeting is required even when teacher permissions are broader.
 
-- **Decision**: Use existing NestJS, TypeORM, class-validator, Swagger, Next.js, Zod, and Tailwind tooling.
-- **Rationale**: The problem is domain validation and schema evolution; existing stack covers it fully.
-- **Alternatives considered**: Adding i18n or validation libraries was rejected as unnecessary for a fixed Egyptian Arabic grade vocabulary.
+**Alternatives considered**: Deriving Group stage/year from students was rejected because group creation must select stage/year before students are necessarily assigned. Allowing multi-stage groups was rejected by clarification.
+
+## Decision: Sessions inherit Group targeting unless existing schema proves otherwise
+
+**Decision**: Treat Sessions as strictly targeted to one stage/year through their owning Group unless implementation discovery finds an independent Session grade field already in use.
+
+**Rationale**: The spec requires sessions to be single stage/year. Deriving from Group avoids duplicated persistence and reduces mismatch risk.
+
+**Alternatives considered**: Independent Session columns were rejected for initial planning because they add synchronization rules without an explicit business need.
+
+## Decision: `UNASSIGNED` uses year `0` for migration/manual-review records
+
+**Decision**: The database constraint must allow `education_stage = UNASSIGNED` with `education_year = 0`, while canonical stages keep their standard Egyptian year ranges.
+
+**Rationale**: Clarifications require un-mappable legacy records to be preserved and flagged for manual review. Without this allowance, migration can fail on historical data.
+
+**Alternatives considered**: Null values were rejected because they weaken filtering and validation. Silent coercion to a real grade was rejected because it pollutes data.
+
+## Decision: Existing Group/Homework records default to `UNASSIGNED` when unmappable
+
+**Decision**: Existing records without reliable stage/year values are migrated to `UNASSIGNED`, year `0`, and are blocked from normal stage/year-targeted workflows until reviewed where applicable.
+
+**Rationale**: This preserves records without inventing grade data. It also provides a consistent rollout path for all entities touched by stage/year constraints.
+
+**Alternatives considered**: Bulk assigning to Secondary was rejected as inaccurate. Blocking migration until all records are cleaned manually was rejected as operationally risky.
+
+## Decision: Frontend forms use Server Actions with Zod validation
+
+**Decision**: All frontend forms that submit `education_stage`, `education_year`, or teacher assigned stages validate with Zod before sending data to backend services.
+
+**Rationale**: This is constitution-mandated and improves user feedback while backend validation remains authoritative.
+
+**Alternatives considered**: UI-only validation was rejected because users can bypass controls. Backend-only validation was rejected because it weakens UX and violates the constitution.

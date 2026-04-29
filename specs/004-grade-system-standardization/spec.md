@@ -14,6 +14,8 @@
 - Q: Can a group or session span multiple grades or stages simultaneously? → A: Strictly one stage and one year per Group/Session.
 - Q: How should the migration script handle existing student records where the grade field is completely empty or null? → A: Treat as un-mappable: assign the "Unassigned" enum state and flag for review.
 - Q: How should the database enforce valid grade-year ranges for each education stage? → A: Use a database CHECK constraint tying stage to allowed year ranges.
+- Q: Should teachers be assigned full stage/year combinations or broader education stages? → A: Teachers are assigned one or more education stages only, such as Secondary or Secondary + Preparatory.
+- Q: Should `frontend/components/homework/AddHomeWorkSheet.tsx` be included in the grade standardization work? → A: Yes; the add-homework sheet must submit and validate homework stage/year data consistently with the selected group and render canonical grade context where shown.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -60,10 +62,30 @@ As a teacher, I want to filter my students, groups, sessions, and homework assig
 
 1. **Given** a list of all students, **When** I apply a filter for the "Secondary" stage and "Year 3", **Then** the list only displays students categorized as "الصف الثالث الثانوي".
 
+---
+
+### User Story 4 - Teacher Stage Assignment and Group Targeting (Priority: P1)
+
+As an administrator or teacher configuring teaching responsibilities, I want each teacher to be assigned at least one education stage and every group to have one specific stage and year, so that groups can only be created for grades the teacher is allowed to teach.
+
+**Why this priority**: Teacher grade ownership controls which groups can be created and prevents scheduling or student assignment under the wrong education stage.
+
+**Independent Test**: Can be fully tested by assigning a teacher to Secondary only, creating a Secondary Year 3 group successfully, and verifying that creating a Preparatory group for the same teacher is blocked.
+
+**Acceptance Scenarios**:
+
+1. **Given** a teacher profile with no assigned education stages, **When** the profile is saved, **Then** the system prevents saving and requires at least one stage.
+2. **Given** a teacher assigned to Secondary only, **When** a group is created for that teacher, **Then** the group stage selector only allows Secondary and the year selector allows years 1 through 3.
+3. **Given** a teacher assigned to Secondary and Preparatory, **When** a group is created for that teacher, **Then** the group stage selector allows both Secondary and Preparatory and each selected stage shows only valid years.
+4. **Given** a group creation form, **When** the user attempts to save without selecting both stage and year, **Then** the system blocks saving and clearly identifies the missing fields.
+
 ### Edge Cases
 
 - **Invalid External Integrations:** If an external system integration or API request attempts to send an invalid stage/year combination, the system will reject the payload synchronously with a 400 Bad Request and a descriptive validation error.
 - **Data Migration Error Handling:** Historical records that do not neatly fit into the new stage/year structure will be assigned an explicit "Unassigned" enum for stage and grade, and flagged for manual review to prevent data pollution.
+- **Teacher Stage Mismatch:** If a request attempts to create or update a group with a stage that is not assigned to the selected teacher, the system rejects the request with a clear validation error.
+- **Teacher Without Stages:** If an existing teacher has no assigned stages during rollout, the teacher must be flagged for setup before they can create or manage groups.
+- **Homework Sheet Missing Grade Context:** If the add-homework sheet is opened without enough group stage/year context, the system must prevent homework creation and show a clear error instead of creating homework with missing or mismatched targeting.
 
 ## Requirements *(mandatory)*
 
@@ -77,10 +99,18 @@ As a teacher, I want to filter my students, groups, sessions, and homework assig
 - **FR-006**: System MUST allow filtering of students, groups, sessions, and homework by education stage and specific year.
 - **FR-007**: System MUST automatically convert all existing student grade records to the new standardized format without data loss.
 - **FR-008**: System MUST enforce valid stage/year combinations at the database layer using a CHECK constraint: Primary permits years 1 through 6, while Preparatory and Secondary permit years 1 through 3.
+- **FR-009**: System MUST require every teacher to be assigned at least one education stage.
+- **FR-010**: System MUST allow every teacher to be assigned one or more education stages, such as Secondary only or Secondary and Preparatory.
+- **FR-011**: System MUST require every group to have exactly one education stage and exactly one valid year before it can be saved.
+- **FR-012**: System MUST prevent assigning a group to a stage that is not included in the selected teacher's assigned education stages.
+- **FR-013**: System MUST limit group year selections to the valid range for the selected group stage.
+- **FR-014**: System MUST ensure the add-homework sheet submits homework with the selected group's education stage and year, or blocks submission when that group grade context is unavailable.
+- **FR-015**: System MUST ensure the add-homework sheet displays canonical Arabic grade context using backend-provided group/homework grade labels where grade context is shown.
 
 ### Key Entities
 
 - **Student**: Represents the learner, including their specific education stage and year.
+- **Teacher**: Represents the instructor, including one or more assigned education stages they are allowed to teach.
 - **Group**: Represents a class cohort, which MUST be strictly restricted to a single specific stage and year.
 - **Session**: Represents a scheduled class, which MUST be strictly targeted at a single specific stage and year.
 - **Homework**: Assignments targeted to students of a specific stage and year.
@@ -94,9 +124,13 @@ As a teacher, I want to filter my students, groups, sessions, and homework assig
 - **SC-002**: 100% of existing legacy grade data is successfully migrated to the new structure without data loss.
 - **SC-003**: All user-facing interfaces display the canonical Arabic grade label format consistently, with 0 instances of raw numbers or English terms (e.g., "Grade 3", "3rd secondary").
 - **SC-004**: System successfully blocks 100% of attempts to save invalid stage/year combinations.
+- **SC-005**: 100% of teacher profiles have at least one assigned education stage before they can create or manage groups.
+- **SC-006**: 100% of newly created groups include exactly one valid stage/year pair that belongs to the selected teacher's assigned stages.
+- **SC-007**: 100% of homework created from the add-homework sheet is associated with a valid stage/year pair matching the selected group.
 
 ## Assumptions
 
 - Existing students with un-mappable legacy grades will require manual review or be mapped to a safe default.
 - The canonical formatting logic will be centralized to ensure consistency across all features.
 - International systems (IG, American Diploma) are out of scope for this initial standardization phase.
+- Teacher assignments are stage-level permissions, not exact stage/year permissions.

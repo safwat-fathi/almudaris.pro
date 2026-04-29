@@ -8,7 +8,10 @@ import {
   MaxLength,
   MinLength,
   IsDateString,
+  IsEnum,
+  IsInt,
 } from 'class-validator';
+import { EducationStage } from '../../common/grades/grade-system';
 
 export class CreateHomeworkDto {
   @ApiProperty({
@@ -39,6 +42,24 @@ export class CreateHomeworkDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({
+    description: 'Education stage for homework targeting',
+    enum: EducationStage,
+    example: EducationStage.SECONDARY,
+  })
+  @IsOptional()
+  @IsEnum(EducationStage)
+  education_stage?: EducationStage;
+
+  @ApiPropertyOptional({
+    description: 'Education year for homework targeting',
+    example: 3,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  education_year?: number;
 
   @ApiPropertyOptional({
     description: 'Due date of the homework (ISO 8601)',
