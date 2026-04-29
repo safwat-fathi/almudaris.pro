@@ -22,7 +22,7 @@ export class HomeworkService {
   ) {}
 
   async create(createHomeworkDto: CreateHomeworkDto): Promise<Homework> {
-		try {
+    try {
       const homework = this.homeworkRepository.create(createHomeworkDto);
       return this.homeworkRepository.save(homework);
     } catch (error) {
