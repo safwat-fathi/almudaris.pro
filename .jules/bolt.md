@@ -1,0 +1,3 @@
+## 2024-05-01 - O(n²) nested loop in data aggregations
+**Learning:** Found a common anti-pattern in the NestJS backend where related entities (e.g. submissions mapped to students, attachments mapped to submissions) are joined in memory using `.find()` inside a `.map()`. This creates an O(n²) time complexity bottleneck for large datasets like homework submissions.
+**Action:** When aggregating or associating bulk data fetched from TypeORM repositories in memory, always pre-compute lookups using Hash Maps (e.g., `new Map()`) keyed by the relational IDs. This drops the nested iteration to an O(n) lookup and improves response times for list endpoints.
