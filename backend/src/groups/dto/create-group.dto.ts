@@ -16,6 +16,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LocationType } from '../entities/group.entity';
 import { GROUPS_CONFIG } from '../../config/groups.config';
+import { EducationStage } from '../../common/grades/grade-system';
 
 export class CreateGroupDto {
   @ApiProperty({
@@ -72,6 +73,21 @@ export class CreateGroupDto {
   @IsString()
   @IsOptional()
   title?: string;
+
+  @ApiProperty({
+    enum: EducationStage,
+    example: EducationStage.SECONDARY,
+    description: 'Education stage for this group',
+  })
+  @IsEnum(EducationStage)
+  education_stage: EducationStage;
+
+  @ApiProperty({
+    example: 3,
+    description: 'Education year for this group',
+  })
+  @IsInt()
+  education_year: number;
 
   @ApiPropertyOptional({
     example: false,

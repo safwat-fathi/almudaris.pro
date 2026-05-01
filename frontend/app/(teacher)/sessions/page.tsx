@@ -9,13 +9,24 @@ export const metadata: Metadata = {
 		"عرض وإدارة جميع الجلسات التعليمية — جدول الحصص والحضور والتفاصيل",
 };
 
-export default async function SessionsPage() {
+export default async function SessionsPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ education_stage?: string; education_year?: string }>
+}) {
+	const params = await searchParams;
+	const educationStage = params.education_stage;
+	const educationYear = params.education_year ? Number(params.education_year) : undefined;
+
 	let groups = [];
 	let students: Student[] = [];
 	let error = null;
 
 	try {
-		const paginatedGroups = await groupsService.fetchGroups();
+		const paginatedGroups = await groupsService.fetchGroups({
+			education_stage: educationStage,
+			education_year: educationYear,
+		});
 		groups = paginatedGroups?.data?.items || [];
 		const studentsResponse = await teachersService.fetchStudents();
 		students = studentsResponse.data;
@@ -34,6 +45,24 @@ export default async function SessionsPage() {
 
 	return (
 		<main className="max-w-5xl mx-auto px-4 md:px-8 pt-6 md:pt-8 w-full pb-32">
+			<form method="GET" className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+				<select name="education_stage" defaultValue={educationStage || ""} className="h-11 rounded-lg border border-outline-variant/40 bg-surface-container-low px-3">
+					<option value="">كل المراحل</option>
+					<option value="PRIMARY">ابتدائي</option>
+					<option value="PREPARATORY">إعدادي</option>
+					<option value="SECONDARY">ثانوي</option>
+				</select>
+				<select name="education_year" defaultValue={params.education_year || ""} className="h-11 rounded-lg border border-outline-variant/40 bg-surface-container-low px-3">
+					<option value="">كل الصفوف</option>
+					<option value="1">الصف الأول</option>
+					<option value="2">الصف الثاني</option>
+					<option value="3">الصف الثالث</option>
+					<option value="4">الصف الرابع</option>
+					<option value="5">الصف الخامس</option>
+					<option value="6">الصف السادس</option>
+				</select>
+				<button type="submit" className="h-11 rounded-lg bg-primary text-on-primary font-semibold">تطبيق الفلتر</button>
+			</form>
 			<SessionsView groups={groups} students={students} />
 		</main>
 	);

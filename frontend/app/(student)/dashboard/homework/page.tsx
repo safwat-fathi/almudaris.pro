@@ -16,6 +16,26 @@ export default function HomeworkTasksPage() {
           <p className="text-on-surface-variant text-lg max-w-lg">مرحباً بك في مساحتك الدراسية. تتبع مهامك الدراسية وحافظ على تفوقك.</p>
         </section>
 
+
+        <form method="GET" className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <select name="education_stage" className="h-11 rounded-lg border border-outline-variant/40 bg-surface-container-low px-3">
+            <option value="">كل المراحل</option>
+            <option value="PRIMARY">ابتدائي</option>
+            <option value="PREPARATORY">إعدادي</option>
+            <option value="SECONDARY">ثانوي</option>
+          </select>
+          <select name="education_year" className="h-11 rounded-lg border border-outline-variant/40 bg-surface-container-low px-3">
+            <option value="">كل الصفوف</option>
+            <option value="1">الصف الأول</option>
+            <option value="2">الصف الثاني</option>
+            <option value="3">الصف الثالث</option>
+            <option value="4">الصف الرابع</option>
+            <option value="5">الصف الخامس</option>
+            <option value="6">الصف السادس</option>
+          </select>
+          <button type="submit" className="h-11 rounded-lg bg-primary text-on-primary font-semibold">تصفية</button>
+        </form>
+
         {/* Pending Tasks Section */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">

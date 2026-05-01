@@ -9,6 +9,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Group, GroupStatus } from './entities/group.entity';
 import {
+  EducationStage,
+  isValidGrade,
+  EDUCATION_STAGE_YEARS,
+} from '../common/grades/grade-system';
+import {
   GroupStudent,
   AttendanceStatus,
 } from './entities/group-student.entity';
@@ -54,6 +59,12 @@ export class GroupsService {
     teacherId: number,
   ): Promise<{ groups: Group[]; warnings: string[] }> {
     const warnings: string[] = [];
+
+    if (!isValidGrade(dto.education_stage, dto.education_year)) {
+      throw new BadRequestException(
+        `Invalid education_stage/education_year combination: ${dto.education_stage} only supports years ${EDUCATION_STAGE_YEARS[dto.education_stage]?.join(', ') || '0'}.`,
+      );
+    }
 
     // Validate students belong to this teacher (FR-002)
     const enrollments = await this.enrollmentRepo.find({
@@ -132,6 +143,8 @@ export class GroupsService {
         teacher_id: teacherId,
         created_by_id: teacherId,
         title: dto.title,
+        education_stage: dto.education_stage,
+        education_year: dto.education_year,
         date,
         start_time: dto.start_time,
         duration_minutes: dto.duration_minutes,
@@ -175,6 +188,8 @@ export class GroupsService {
       to?: string;
       status?: GroupStatus;
       student_id?: number;
+      education_stage?: EducationStage;
+      education_year?: number;
     },
     pagination?: { page: number; limit: number },
   ): Promise<PaginatedResponseDto<Group>> {
@@ -187,6 +202,28 @@ export class GroupsService {
       .where('group.teacher_id = :teacherId', { teacherId })
       .orderBy('group.date', 'ASC')
       .addOrderBy('group.start_time', 'ASC');
+
+    if (
+      filters?.education_stage !== undefined &&
+      filters?.education_year !== undefined &&
+      !isValidGrade(filters.education_stage, filters.education_year)
+    ) {
+      throw new BadRequestException(
+        `Invalid education_stage/education_year combination.`,
+      );
+    }
+
+    if (filters?.education_stage) {
+      qb.andWhere('group.education_stage = :educationStage', {
+        educationStage: filters.education_stage,
+      });
+    }
+
+    if (filters?.education_year !== undefined) {
+      qb.andWhere('group.education_year = :educationYear', {
+        educationYear: filters.education_year,
+      });
+    }
 
     if (filters?.from) {
       qb.andWhere('group.date >= :from', { from: filters.from });
@@ -249,6 +286,18 @@ export class GroupsService {
     const warnings: string[] = [];
     const group = await this.findOne(groupId, teacherId);
 
+    const stage = dto.education_stage ?? group.education_stage;
+    const year = dto.education_year ?? group.education_year;
+
+    if (
+      (dto.education_stage !== undefined || dto.education_year !== undefined) &&
+      !isValidGrade(stage, year)
+    ) {
+      throw new BadRequestException(
+        `Invalid education_stage/education_year combination: ${stage} and year ${year}.`,
+      );
+    }
+
     if (group.status !== GroupStatus.SCHEDULED) {
       throw new BadRequestException(
         'لا يمكن تعديل تفاصيل حصة مكتملة أو ملغاة.',
@@ -294,6 +343,10 @@ export class GroupsService {
       if (dto.location_place !== undefined)
         g.location_place = dto.location_place;
       if (dto.title !== undefined) g.title = dto.title;
+      if (dto.education_stage !== undefined)
+        g.education_stage = dto.education_stage;
+      if (dto.education_year !== undefined)
+        g.education_year = dto.education_year;
 
       await this.groupRepo.save(g);
 

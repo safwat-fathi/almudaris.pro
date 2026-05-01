@@ -1,14 +1,25 @@
-import { Controller, Get, Param, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Req,
+  Delete,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiBearerAuth,
   ApiParam,
   ApiResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { TeachersService } from './teachers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import CONSTANTS from 'src/common/constants';
+import { EducationStage } from 'src/common/grades/grade-system';
 
 /**
  * Controller for handling Teacher-specific operations such as invitation generation and retrieval.
@@ -37,7 +48,7 @@ export class TeachersController {
     status: 401,
     description: 'Unauthorized if not authenticated or not a teacher.',
   })
-  async getMyInviteCode(@Req() req) {
+  async getMyInviteCode(@Req() req: { user: { userId: number } }) {
     const teacherId = req.user.userId; // Matches the payload from JwtStrategy
     const inviteCode = await this.teachersService.getInviteCode(teacherId);
     return { inviteCode };
@@ -57,9 +68,79 @@ export class TeachersController {
     description: 'Returns a list of students with their IDs and names.',
     schema: { example: [{ id: 1, name: 'Student Name' }] },
   })
-  async getMyStudents(@Req() req) {
+  @ApiQuery({
+    name: 'education_stage',
+    required: false,
+    enum: ['PRIMARY', 'PREPARATORY', 'SECONDARY', 'UNASSIGNED'],
+  })
+  @ApiQuery({ name: 'education_year', required: false, type: Number })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
+  async getMyStudents(
+    @Req() req: { user: { userId: number } },
+    @Query('education_stage')
+    educationStage?: EducationStage,
+    @Query('education_year') educationYear?: string,
+  ) {
     const teacherId = req.user.userId;
-    return this.teachersService.getStudents(teacherId);
+    return this.teachersService.getStudents(teacherId, {
+      education_stage: educationStage,
+      education_year:
+        educationYear !== undefined ? parseInt(educationYear, 10) : undefined,
+    });
+  }
+
+  /**
+   * Retrieves details of a specific student enrolled with the currently authenticated teacher.
+   */
+  @Get('students/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
+  @ApiOperation({
+    summary:
+      'Get details of a specific student enrolled with the authenticated teacher',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the student details.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student not found or not enrolled with this teacher.',
+  })
+  async getStudentDetails(
+    @Req() req: { user: { userId: number } },
+    @Param('id', ParseIntPipe) studentId: number,
+  ) {
+    const teacherId = req.user.userId;
+    return this.teachersService.getActiveEnrollmentOrFail(teacherId, studentId);
+  }
+
+  /**
+   * Removes a student from the authenticated teacher's class.
+   */
+  @Delete('students/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
+  @ApiOperation({
+    summary: "Remove a student from the authenticated teacher's class",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Student removed successfully.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student not found or not enrolled with this teacher.',
+  })
+  async removeStudent(
+    @Req() req: { user: { userId: number } },
+    @Param('id', ParseIntPipe) studentId: number,
+  ) {
+    const teacherId = req.user.userId;
+    return this.teachersService.removeStudent(teacherId, studentId);
   }
 
   /**

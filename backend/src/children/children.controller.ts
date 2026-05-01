@@ -2,11 +2,13 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   UseGuards,
   Req,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,12 +17,14 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
-import { ChildrenService } from './children.service';
+import { ChildrenService, ChildResponse } from './children.service';
 import { CreateChildDto } from './dto/create-child.dto';
+import { UpdateChildDto } from './dto/update-child.dto';
 import { EnrollChildDto } from './dto/enroll-child.dto';
+import { ListChildrenQueryDto } from './dto/list-children-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { User } from '../users/entities/user.entity';
 import CONSTANTS from 'src/common/constants';
 
 @ApiTags('children')
@@ -38,9 +42,22 @@ export class ChildrenController {
     status: 200,
     description: 'List of children returned successfully.',
   })
-  async getChildren(@Req() req): Promise<User[]> {
+  @ApiQuery({
+    name: 'education_stage',
+    required: false,
+    enum: ['PRIMARY', 'PREPARATORY', 'SECONDARY', 'UNASSIGNED'],
+  })
+  @ApiQuery({ name: 'education_year', required: false, type: Number })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
+  async getChildren(
+    @Req() req: { user: { userId: number } },
+    @Query() query: ListChildrenQueryDto,
+  ): Promise<ChildResponse[]> {
     const parentId = req.user.userId;
-    return this.childrenService.getChildrenByParent(parentId);
+    return this.childrenService.getChildrenByParent(parentId, query);
   }
 
   @Post()
@@ -49,16 +66,40 @@ export class ChildrenController {
   })
   @ApiBody({ type: CreateChildDto })
   @ApiResponse({ status: 201, description: 'Child created successfully.' })
-  async createChild(@Req() req, @Body() createChildDto: CreateChildDto) {
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
+  async createChild(
+    @Req() req: { user: { userId: number } },
+    @Body() createChildDto: CreateChildDto,
+  ) {
     const parentId = req.user.userId;
     const child = await this.childrenService.createChild(
       parentId,
       createChildDto,
     );
-    return {
-      message: 'Child created successfully.',
-      child: { id: child.id, name: child.name },
-    };
+    return child;
+  }
+
+  @Patch(':childId')
+  @ApiOperation({
+    summary: 'Update a child profile',
+  })
+  @ApiParam({ name: 'childId', type: 'number' })
+  @ApiBody({ type: UpdateChildDto })
+  @ApiResponse({ status: 200, description: 'Child updated successfully.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
+  async updateChild(
+    @Req() req: { user: { userId: number } },
+    @Param('childId', ParseIntPipe) childId: number,
+    @Body() updateDto: UpdateChildDto,
+  ) {
+    const parentId = req.user.userId;
+    return this.childrenService.updateChild(parentId, childId, updateDto);
   }
 
   @Post(':childId/enroll')
@@ -76,7 +117,7 @@ export class ChildrenController {
     description: 'Child already enrolled with this teacher.',
   })
   async enrollChild(
-    @Req() req,
+    @Req() req: { user: { userId: number } },
     @Param('childId', ParseIntPipe) childId: number,
     @Body() enrollDto: EnrollChildDto,
   ) {

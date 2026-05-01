@@ -29,6 +29,7 @@ import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GroupStatus } from './entities/group.entity';
+import { EducationStage } from '../common/grades/grade-system';
 import CONSTANTS from 'src/common/constants';
 
 @ApiTags('groups')
@@ -73,6 +74,12 @@ export class GroupsController {
   @ApiQuery({ name: 'status', required: false, enum: GroupStatus })
   @ApiQuery({ name: 'student_id', required: false, type: Number })
   @ApiQuery({
+    name: 'education_stage',
+    required: false,
+    enum: ['PRIMARY', 'PREPARATORY', 'SECONDARY', 'UNASSIGNED'],
+  })
+  @ApiQuery({ name: 'education_year', required: false, type: Number })
+  @ApiQuery({
     name: 'page',
     required: false,
     type: Number,
@@ -88,12 +95,18 @@ export class GroupsController {
     status: 200,
     description: 'Paginated list of groups returned successfully.',
   })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid education_stage/education_year combination.',
+  })
   async findAll(
     @Req() req,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('status') status?: GroupStatus,
     @Query('student_id') student_id?: string,
+    @Query('education_stage') education_stage?: string,
+    @Query('education_year') education_year?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -105,6 +118,10 @@ export class GroupsController {
         to,
         status,
         student_id: student_id ? parseInt(student_id, 10) : undefined,
+        education_stage: education_stage as EducationStage | undefined,
+        education_year: education_year
+          ? parseInt(education_year, 10)
+          : undefined,
       },
       {
         page: page ? parseInt(page, 10) : 1,

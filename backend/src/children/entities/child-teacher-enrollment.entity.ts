@@ -4,6 +4,8 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  DeleteDateColumn,
+  Column,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -25,4 +27,13 @@ export class ChildTeacherEnrollment {
 
   @CreateDateColumn()
   created_at: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  deactivated_at: Date;
+
+  @Column({
+    type: 'int',
+    nullable: true,
+  })
+  deactivated_by: number;
 }
