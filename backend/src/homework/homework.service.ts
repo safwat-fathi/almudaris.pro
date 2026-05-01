@@ -53,9 +53,15 @@ export class HomeworkService {
     });
 
     const submissionIds = submissions.map((s) => s.id);
-    const attachments = await this.attachmentRepository.find({
-      where: submissionIds.length ? { submission_id: In(submissionIds) } : {},
-    });
+
+    // ⚡ Bolt: Prevent full table scan of attachments when there are no submissions.
+    // `find({ where: {} })` fetches all rows, which causes a performance bottleneck.
+    const attachments =
+      submissionIds.length > 0
+        ? await this.attachmentRepository.find({
+            where: { submission_id: In(submissionIds) },
+          })
+        : [];
 
     const group = await this.groupRepository.findOne({
       where: { id: homework.group_id },
