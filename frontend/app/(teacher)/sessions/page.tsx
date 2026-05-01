@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import SessionsView from "@/components/sessions/SessionsView";
-import { groupsService } from "@/services/api/groups";
+import { groupsService, Group } from "@/services/api/groups";
 import { Student, teachersService } from "@/services/api/teachers";
 
 export const metadata: Metadata = {
@@ -18,17 +18,20 @@ export default async function SessionsPage({
 	const educationStage = params.education_stage;
 	const educationYear = params.education_year ? Number(params.education_year) : undefined;
 
-	let groups = [];
+	let groups: Group[] = [];
 	let students: Student[] = [];
 	let error = null;
 
 	try {
-		const paginatedGroups = await groupsService.fetchGroups({
-			education_stage: educationStage,
-			education_year: educationYear,
-		});
+		// Bolt: Parallelize data fetching to reduce load time
+		const [paginatedGroups, studentsResponse] = await Promise.all([
+			groupsService.fetchGroups({
+				education_stage: educationStage,
+				education_year: educationYear,
+			}),
+			teachersService.fetchStudents()
+		]);
 		groups = paginatedGroups?.data?.items || [];
-		const studentsResponse = await teachersService.fetchStudents();
 		students = studentsResponse.data;
 	} catch (err: unknown) {
 		const errorObj = err as Error;

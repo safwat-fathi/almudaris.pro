@@ -40,7 +40,7 @@ export default function SessionForm({
 	);
 	const [isRecurring, setIsRecurring] = useState(false);
 	const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>(
-		group?.students.map(s => s.student_id) || [],
+		group?.students?.map(s => s.student_id) || [],
 	);
 
 	useEffect(() => {

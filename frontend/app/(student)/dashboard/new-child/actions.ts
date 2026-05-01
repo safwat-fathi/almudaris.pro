@@ -23,7 +23,7 @@ export async function createChildAction(
 	const parsed = createChildSchema.safeParse(Object.fromEntries(formData.entries()));
 
 	if (!parsed.success) {
-		return { error: parsed.error.errors[0]?.message || "Validation failed." };
+		return { error: parsed.error.issues[0]?.message || "Validation failed." };
 	}
 
 	const { name, email, teacherId, education_stage, education_year } = parsed.data;

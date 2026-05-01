@@ -21,12 +21,12 @@ export default async function HomeworkSubmissionsPage({
 	params: Promise<{ id: string; homeworkId: string }>;
 }) {
 	const { id, homeworkId } = await params;
-	const submissionsResponse =
-		await homeworkService.getSubmissionsByHomeworkId(homeworkId);
-	const group = await groupsService.fetchGroup(parseInt(id, 10));
-	const homeworksResponse = await homeworkService.fetchHomeworkByGroupId(
-		parseInt(id, 10),
-	);
+	// Bolt: Parallelize data fetching to reduce load time
+	const [submissionsResponse, group, homeworksResponse] = await Promise.all([
+		homeworkService.getSubmissionsByHomeworkId(homeworkId),
+		groupsService.fetchGroup(parseInt(id, 10)),
+		homeworkService.fetchHomeworkByGroupId(parseInt(id, 10))
+	]);
 
 	if (
 		!group ||
