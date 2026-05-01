@@ -22,53 +22,49 @@ export class HomeworkService {
   ) {}
 
   async create(createHomeworkDto: CreateHomeworkDto): Promise<Homework> {
-		try {
-      const homework = this.homeworkRepository.create(createHomeworkDto);
-      return this.homeworkRepository.save(homework);
-    } catch (error) {
-      throw error;
-    }
+    const homework = this.homeworkRepository.create(createHomeworkDto);
+    return this.homeworkRepository.save(homework);
   }
 
   async findByGroupId(groupId: number): Promise<Homework[]> {
-    try {
-      return this.homeworkRepository.find({
-        where: { group_id: groupId },
-        order: { created_at: 'DESC' },
-      });
-    } catch (error) {
-      throw error;
-    }
+    return this.homeworkRepository.find({
+      where: { group_id: groupId },
+      order: { created_at: 'DESC' },
+    });
   }
 
   async toggleStatus(id: number, isOpen: boolean): Promise<Homework> {
-    try {
-      const homework = await this.homeworkRepository.findOne({ where: { id } });
-      if (!homework) {
-        throw new NotFoundException('Homework not found');
-      }
-      homework.is_open = isOpen;
-      return this.homeworkRepository.save(homework);
-    } catch (error) {
-      throw error;
+    const homework = await this.homeworkRepository.findOne({ where: { id } });
+    if (!homework) {
+      throw new NotFoundException('Homework not found');
     }
+    homework.is_open = isOpen;
+    return this.homeworkRepository.save(homework);
   }
 
   async getSubmissionsByHomework(id: number): Promise<any[]> {
-    try {
-      const homework = await this.homeworkRepository.findOne({ where: { id } });
-      if (!homework) {
-        throw new NotFoundException('Homework not found');
-      }
+    const homework = await this.homeworkRepository.findOne({ where: { id } });
+    if (!homework) {
+      throw new NotFoundException('Homework not found');
+    }
 
+    const submissions = await this.submissionRepository.find({
+      where: { homework_id: id },
+    });
       const submissions = await this.submissionRepository.find({
         where: { homework_id: id },
       });
 
       const submissionIds = submissions.map((s) => s.id);
-      const attachments = await this.attachmentRepository.find({
-        where: submissionIds.length ? { submission_id: In(submissionIds) } : {},
-      });
+
+      // ⚡ Bolt: Prevent full table scan of attachments when there are no submissions.
+      // `find({ where: {} })` fetches all rows, which causes a performance bottleneck.
+      const attachments =
+        submissionIds.length > 0
+          ? await this.attachmentRepository.find({
+              where: { submission_id: In(submissionIds) },
+            })
+          : [];
 
       const group = await this.groupRepository.findOne({
         where: { id: homework.group_id },
@@ -78,30 +74,68 @@ export class HomeworkService {
         throw new NotFoundException('Group not found');
       }
 
-      const students = group.students;
+    const submissionIds = submissions.map((s) => s.id);
 
-      return students.map((student) => {
-        const { student_id, student_name } = student;
-        const sub = submissions.find((s) => s.student_id === student_id);
+    // ⚡ Bolt: Prevent full table scan of attachments when there are no submissions.
+    // `find({ where: {} })` fetches all rows, which causes a performance bottleneck.
+    const attachments =
+      submissionIds.length > 0
+        ? await this.attachmentRepository.find({
+            where: { submission_id: In(submissionIds) },
+          })
+        : [];
 
-        let subData: any = null;
-
-        if (sub) {
-          subData = {
-            ...sub,
-            attachments: attachments.filter((a) => a.submission_id === sub.id),
-          };
-        }
-
-        return {
-          student_id,
-          student_name,
-          status: computeStatus(homework.due_date, sub?.submitted_at),
-          submission: subData,
-        };
-      });
-    } catch (error) {
-      throw error;
+    const group = await this.groupRepository.findOne({
+      where: { id: homework.group_id },
+      relations: ['students'],
+    });
+    if (!group) {
+      throw new NotFoundException('Group not found');
     }
+
+    const students = group.students;
+
+    // O(n) maps for efficient lookups
+    const submissionsMap = new Map<number, Submission>();
+    for (const sub of submissions) {
+      submissionsMap.set(sub.student_id, sub);
+    }
+
+    const attachmentsMap = new Map<number, SubmissionAttachment[]>();
+    for (const att of attachments) {
+      const existing = attachmentsMap.get(att.submission_id) || [];
+      existing.push(att);
+      attachmentsMap.set(att.submission_id, existing);
+    }
+
+    return students.map((student) => {
+      const { student_id, student_name } = student;
+      const sub = submissionsMap.get(student_id);
+
+      let subData: {
+        id: number;
+        homework_id: number;
+        student_id: number;
+        answer_text: string;
+        submission_version: number;
+        submitted_at: Date;
+        updated_at: Date;
+        attachments: SubmissionAttachment[];
+      } | null = null;
+
+      if (sub) {
+        subData = {
+          ...sub,
+          attachments: attachmentsMap.get(sub.id) || [],
+        };
+      }
+
+      return {
+        student_id,
+        student_name,
+        status: computeStatus(homework.due_date, sub?.submitted_at),
+        submission: subData,
+      };
+    });
   }
 }

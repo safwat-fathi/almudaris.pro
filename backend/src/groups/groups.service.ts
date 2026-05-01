@@ -351,26 +351,28 @@ export class GroupsService {
       await this.groupRepo.save(group);
     }
 
-    // Update per-student attendance and notes
-    for (const studentDto of dto.students) {
-      const gs = await this.groupStudentRepo.findOne({
-        where: { group_id: groupId, student_id: studentDto.id },
-      });
+    // Update per-student attendance and notes concurrently
+    await Promise.all(
+      dto.students.map(async (studentDto) => {
+        const gs = await this.groupStudentRepo.findOne({
+          where: { group_id: groupId, student_id: studentDto.id },
+        });
 
-      if (!gs) continue;
+        if (!gs) return;
 
-      gs.attendance_status = studentDto.attendance_status;
+        gs.attendance_status = studentDto.attendance_status;
 
-      if (studentDto.note !== undefined) {
-        const noteChanged = gs.note !== studentDto.note;
-        gs.note = studentDto.note;
-        if (noteChanged) {
-          gs.note_updated_at = new Date();
+        if (studentDto.note !== undefined) {
+          const noteChanged = gs.note !== studentDto.note;
+          gs.note = studentDto.note;
+          if (noteChanged) {
+            gs.note_updated_at = new Date();
+          }
         }
-      }
 
-      await this.groupStudentRepo.save(gs);
-    }
+        await this.groupStudentRepo.save(gs);
+      }),
+    );
 
     return this.findOne(groupId, teacherId);
   }
