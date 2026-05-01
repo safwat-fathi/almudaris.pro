@@ -110,9 +110,12 @@ export class HomeworkService {
     });
 
     const submissionIds = submissions.map((s) => s.id);
-    const attachments = await this.attachmentRepository.find({
-      where: submissionIds.length ? { submission_id: In(submissionIds) } : {},
-    });
+    const attachments =
+      submissionIds.length > 0
+        ? await this.attachmentRepository.find({
+            where: { submission_id: In(submissionIds) },
+          })
+        : [];
 
     const group = await this.groupRepository.findOne({
       where: { id: homework.group_id },
@@ -124,19 +127,31 @@ export class HomeworkService {
 
     const students = group.students;
 
+    const submissionsMap = new Map<number, Submission>();
+    for (const sub of submissions) {
+      submissionsMap.set(sub.student_id, sub);
+    }
+
+    const attachmentsMap = new Map<number, SubmissionAttachment[]>();
+    for (const att of attachments) {
+      const existing = attachmentsMap.get(att.submission_id) || [];
+      existing.push(att);
+      attachmentsMap.set(att.submission_id, existing);
+    }
+
     return students.map((student) => {
       const { student_id, student_name } = student;
-      const sub = submissions.find(
-        (submission) => submission.student_id === student_id,
-      );
+      const sub = submissionsMap.get(student_id);
 
-      let subData: Submission | null = null;
+      let subData:
+        | (Submission & { attachments: SubmissionAttachment[] })
+        | null = null;
 
       if (sub) {
         subData = {
           ...sub,
-          attachments: attachments.filter((a) => a.submission_id === sub.id),
-        } as Submission;
+          attachments: attachmentsMap.get(sub.id) || [],
+        };
       }
 
       return {
