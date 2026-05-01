@@ -1,5 +1,5 @@
-import { SubmissionSheet } from '../../components/submissions/SubmissionSheet';
-import { StatusBadge } from '../../components/ui/StatusBadge';
+import { SubmissionSheet } from '@/components/submissions/SubmissionSheet';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export default function HomeworkPage() {
   return (

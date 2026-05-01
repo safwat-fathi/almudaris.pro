@@ -16,9 +16,12 @@ export default async function Home() {
   let students: Student[] = [];
   try {
     const today = new Date().toISOString().split('T')[0];
-    const paginatedGroups = await groupsService.fetchGroups({ from: today, to: today });
+    // Bolt: Parallelize data fetching to reduce load time
+    const [paginatedGroups, studentsResponse] = await Promise.all([
+      groupsService.fetchGroups({ from: today, to: today }),
+      teachersService.fetchStudents()
+    ]);
     groups = paginatedGroups?.data?.items || [];
-    const studentsResponse = await teachersService.fetchStudents();
     students = studentsResponse.data;
   } catch (err) {
     console.error("Failed to fetch data", err);

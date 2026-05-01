@@ -15,9 +15,11 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
   // Map backend students to local attendance state
   const [attendance, setAttendance] = useState<Record<number, UIStatus>>(() => {
     const initial: Record<number, UIStatus> = {};
-    group.students.forEach((s) => {
-      initial[s.student_id] = s.attendance_status === "Present" ? "present" : s.attendance_status === "Absent" ? "absent" : "";
-    });
+    if (group.students) {
+      group.students.forEach((s) => {
+        initial[s.student_id] = s.attendance_status === "Present" ? "present" : s.attendance_status === "Absent" ? "absent" : "";
+      });
+    }
     return initial;
   });
 
@@ -51,7 +53,7 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
     const newAttendance: Record<number, UIStatus> = {};
     const formData = new FormData();
     
-    group.students.forEach((s) => {
+    (group.students || []).forEach((s) => {
       newAttendance[s.student_id] = "present";
       formData.append(`student_${s.student_id}_status`, "Present");
     });
@@ -71,8 +73,8 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
   };
 
   const presentCount = Object.values(attendance).filter((s) => s === "present").length;
-  const unpaidCount = group.students.length - Object.values(payments).filter(Boolean).length;
-  const totalCount = group.students.length;
+  const unpaidCount = (group.students?.length || 0) - Object.values(payments).filter(Boolean).length;
+  const totalCount = group.students?.length || 0;
 
   return (
 		<>
@@ -208,7 +210,7 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
 					</span>
 				</div>
 
-				{group.students.map(gs => (
+				{(group.students || []).map(gs => (
 					<div
 						key={gs.student_id}
 						className="bg-surface-container-lowest p-4 rounded-xl flex justify-between items-center shadow-sm border border-outline-variant/10 flex-wrap gap-y-3"
