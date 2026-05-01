@@ -19,6 +19,7 @@ import {
 import { TeachersService } from './teachers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import CONSTANTS from 'src/common/constants';
+import { EducationStage } from 'src/common/grades/grade-system';
 
 /**
  * Controller for handling Teacher-specific operations such as invitation generation and retrieval.
@@ -80,7 +81,7 @@ export class TeachersController {
   async getMyStudents(
     @Req() req: { user: { userId: number } },
     @Query('education_stage')
-    educationStage?: 'PRIMARY' | 'PREPARATORY' | 'SECONDARY' | 'UNASSIGNED',
+    educationStage?: EducationStage,
     @Query('education_year') educationYear?: string,
   ) {
     const teacherId = req.user.userId;
