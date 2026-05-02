@@ -4,11 +4,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { SignupDto } from './dto/signup.dto';
 import { compare } from 'bcrypt';
 import twilio from 'twilio';
+import { Teacher } from '../teachers/entities/teacher.entity';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +20,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    @InjectRepository(Teacher)
+    private readonly teacherRepository: Repository<Teacher>,
   ) {
     const accountSid = process.env.ACCOUNT_SID || '';
     const authToken = process.env.AUTH_TOKEN || '';
@@ -33,8 +38,11 @@ export class AuthService {
 
   login(user: User) {
     const payload = { sub: user.id, role: user.role };
+
+    // TODO: fetch user info (teacher, parent) from respected entity
+
     return {
-      access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
+      access_token: this.jwtService.sign(payload, { expiresIn: '30m' }),
       refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
       user: {
         id: user.id,
@@ -48,9 +56,12 @@ export class AuthService {
 
   async refreshToken(token: string) {
     try {
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET || 'super-secret-key-change-me',
-      });
+      const payload = this.jwtService.verify<{ sub: number; role: UserRole }>(
+        token,
+        {
+          secret: process.env.JWT_SECRET || 'super-secret-key-change-me',
+        },
+      );
       const user = await this.usersService.findById(payload.sub);
       if (!user || !user.is_active) {
         throw new UnauthorizedException('User not found or inactive');
@@ -68,7 +79,6 @@ export class AuthService {
     const password = data.password;
     const role = data.role;
 
-    // Default to teacher if signing up via email/password in MVP
     const userRole = role || UserRole.TEACHER;
 
     if (!phone) {
@@ -80,7 +90,7 @@ export class AuthService {
       throw new BadRequestException('User already exists');
     }
 
-    await this.usersService.create({
+    const createdUser = await this.usersService.create({
       name,
       phone,
       email,
@@ -89,18 +99,23 @@ export class AuthService {
       is_active: false,
     });
 
+    if (userRole === UserRole.TEACHER) {
+      const teacherProfile = this.teacherRepository.create({
+        user_id: createdUser.id,
+      });
+      await this.teacherRepository.save(teacherProfile);
+    }
+
     await this.requestOtp(phone);
 
     return { message: 'User registered successfully. OTP sent.', phone };
   }
 
   async requestOtp(phone: string): Promise<void> {
-    // Check if phone format is somewhat valid
     if (!phone) {
       throw new BadRequestException('Phone is required');
     }
 
-    // In development, skip sending real OTP – any code will be accepted
     if (process.env.NODE_ENV !== 'production') {
       console.log(
         `[DEV] Skipping OTP send for ${phone}. Any code will be accepted.`,
@@ -126,7 +141,6 @@ export class AuthService {
   }
 
   async verifyOtp(phone: string, otpCode: string): Promise<any> {
-    // In development, accept any OTP code
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[DEV] Accepting any OTP code for ${phone}`);
     } else {
@@ -153,11 +167,10 @@ export class AuthService {
 
     let user = await this.usersService.findByPhone(phone);
     if (!user) {
-      // Auto-create user on first OTP login
       user = await this.usersService.create({
         phone,
-        name: 'New User', // Placeholder, can be updated later
-        role: UserRole.PARENT, // Default role for auto-created
+        name: 'New User',
+        role: UserRole.PARENT,
         is_active: true,
       });
     } else if (!user.is_active) {

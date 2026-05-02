@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
 import * as crypto from 'crypto';
@@ -14,60 +14,89 @@ import {
   formatGradeLabel,
   isValidGrade,
 } from '../common/grades/grade-system';
+import { Teacher } from './entities/teacher.entity';
+import { Student } from '../students/entities/student.entity';
 
 @Injectable()
 export class TeachersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Teacher)
+    private teachersRepository: Repository<Teacher>,
+    @InjectRepository(Student)
+    private studentsRepository: Repository<Student>,
     @InjectRepository(ChildTeacherEnrollment)
     private enrollmentRepository: Repository<ChildTeacherEnrollment>,
   ) {}
 
+  private async generateUniqueInviteCode(): Promise<string> {
+    for (let i = 0; i < 10; i += 1) {
+      const inviteCode = crypto.randomBytes(4).toString('hex');
+      const existing = await this.teachersRepository.findOne({
+        where: { invite_code: inviteCode },
+      });
+      if (!existing) {
+        return inviteCode;
+      }
+    }
+
+    throw new BadRequestException('Failed to generate a unique invite code');
+  }
+
   async getInviteCode(teacherId: number): Promise<string> {
-    const teacher = await this.usersRepository.findOne({
+    const teacherUser = await this.usersRepository.findOne({
       where: { id: teacherId, role: UserRole.TEACHER },
     });
 
-    if (!teacher) {
+    if (!teacherUser) {
       throw new UnauthorizedException(
-        'Only teachers can generate invitation codes',
+        'المعلمون فقط هم المسموح لهم بتوليد دعاوى',
       );
     }
 
-    if (teacher.invite_code) {
-      return teacher.invite_code;
+    let teacherProfile = await this.teachersRepository.findOne({
+      where: { user_id: teacherId },
+    });
+
+    if (!teacherProfile) {
+      teacherProfile = this.teachersRepository.create({ user_id: teacherId });
+      teacherProfile = await this.teachersRepository.save(teacherProfile);
     }
 
-    // Generate a unique 8-character hex code
-    const inviteCode = crypto.randomBytes(4).toString('hex');
-    teacher.invite_code = inviteCode;
-    await this.usersRepository.save(teacher);
+    if (teacherProfile.invite_code) {
+      return teacherProfile.invite_code;
+    }
 
-    return inviteCode;
+    teacherProfile.invite_code = await this.generateUniqueInviteCode();
+    await this.teachersRepository.save(teacherProfile);
+
+    return teacherProfile.invite_code;
   }
 
   async findByInviteCode(inviteCode: string): Promise<Partial<User>> {
-    const teacher = await this.usersRepository.findOne({
-      where: { invite_code: inviteCode, role: UserRole.TEACHER },
+    const teacherProfile = await this.teachersRepository.findOne({
+      where: { invite_code: inviteCode },
+      relations: ['user'],
     });
 
-    if (!teacher || !teacher.is_active) {
+    if (
+      !teacherProfile ||
+      !teacherProfile.user ||
+      teacherProfile.user.role !== UserRole.TEACHER ||
+      !teacherProfile.user.is_active
+    ) {
       throw new NotFoundException('Invalid or expired invitation link');
     }
 
     return {
-      id: teacher.id,
-      name: teacher.name,
-      phone: teacher.phone,
-      email: teacher.email,
+      id: teacherProfile.user.id,
+      name: teacherProfile.user.name,
+      phone: teacherProfile.user.phone,
+      email: teacherProfile.user.email,
     };
   }
 
-  /**
-   * Retrieves all students enrolled with a specific teacher.
-   * Returns an array of student objects with id and name.
-   */
   async getStudents(
     teacherId: number,
     filters?: {
@@ -88,13 +117,22 @@ export class TeachersService {
       filters?.education_year !== undefined &&
       !isValidGrade(filters.education_stage, filters.education_year)
     ) {
-      throw new BadRequestException(
-        `Invalid education_stage/education_year combination.`,
-      );
+      throw new BadRequestException('مرحلة تعليمية أو عام دراسي غير صحيح');
+    }
+
+    const teacher = await this.usersRepository.findOne({
+      where: { id: teacherId, role: UserRole.TEACHER },
+    });
+
+    if (!teacher) {
+      throw new UnauthorizedException('غير مصرح لك بذلك');
     }
 
     const enrollments = await this.enrollmentRepository.find({
-      where: { teacher_id: teacherId },
+      where: {
+        teacher_id: teacherId,
+        deactivated_at: IsNull(),
+      },
     });
 
     if (enrollments.length === 0) {
@@ -103,36 +141,52 @@ export class TeachersService {
 
     const studentIds = enrollments.map((e) => e.student_id);
 
-    const students = await this.usersRepository.find({
-      where: {
-        id: In(studentIds),
-        role: UserRole.STUDENT,
-        ...(filters?.education_stage !== undefined
-          ? { education_stage: filters.education_stage }
-          : {}),
-        ...(filters?.education_year !== undefined
-          ? { education_year: filters.education_year }
-          : {}),
-      },
-      select: ['id', 'name', 'education_stage', 'education_year'],
-    });
+    const qb = this.studentsRepository
+      .createQueryBuilder('student')
+      .innerJoinAndSelect('student.user', 'user')
+      .where('student.user_id IN (:...studentIds)', { studentIds })
+      .andWhere('user.role = :role', { role: UserRole.STUDENT });
 
-    return students.map((s) => ({
-      id: s.id,
-      name: s.name,
-      education_stage: s.education_stage,
-      education_year: s.education_year,
-      grade_label: formatGradeLabel(s.education_stage, s.education_year),
+    if (filters?.education_stage !== undefined) {
+      qb.andWhere('student.education_stage = :stage', {
+        stage: filters.education_stage,
+      });
+    }
+
+    if (filters?.education_year !== undefined) {
+      qb.andWhere('student.education_year = :year', {
+        year: filters.education_year,
+      });
+    }
+
+    const students = await qb.getMany();
+
+    return students.map((student) => ({
+      id: student.user_id,
+      name: student.user.name,
+      education_stage: student.education_stage,
+      education_year: student.education_year,
+      grade_label: formatGradeLabel(
+        student.education_stage,
+        student.education_year,
+      ),
     }));
   }
 
-  /**
-   * Retrieves details of a specific student enrolled with a teacher.
-   */
   async getActiveEnrollmentOrFail(
     teacherId: number,
     studentId: number,
-  ): Promise<Partial<User>> {
+  ): Promise<{
+    id: number;
+    name: string;
+    email?: string;
+    phone: string;
+    parent?: {
+      id: number;
+      name: string;
+      phone: string;
+    };
+  }> {
     const enrollment = await this.enrollmentRepository.findOne({
       where: {
         teacher_id: teacherId,
@@ -145,20 +199,23 @@ export class TeachersService {
       throw new NotFoundException('هذا الطالب غير مسجل لديك');
     }
 
-    const student = await this.usersRepository.findOne({
-      where: { id: studentId, role: UserRole.STUDENT },
-      relations: ['parent'],
-    });
+    const student = await this.studentsRepository
+      .createQueryBuilder('student')
+      .innerJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect('student.parent', 'parent')
+      .where('student.user_id = :studentId', { studentId })
+      .andWhere('user.role = :role', { role: UserRole.STUDENT })
+      .getOne();
 
     if (!student) {
       throw new NotFoundException('لم يتم العثور على الطالب');
     }
 
     return {
-      id: student.id,
-      name: student.name,
-      email: student.email,
-      phone: student.phone,
+      id: student.user.id,
+      name: student.user.name,
+      email: student.user.email,
+      phone: student.user.phone,
       parent: student.parent
         ? ({
             id: student.parent.id,
@@ -169,9 +226,6 @@ export class TeachersService {
     };
   }
 
-  /**
-   * Removes a student from a teacher's class (deletes the enrollment).
-   */
   async removeStudent(
     teacherId: number,
     studentId: number,

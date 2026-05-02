@@ -23,14 +23,22 @@ export class ResponseTransformInterceptor implements NestInterceptor {
         const success =
           statusCode >= (HttpStatus.OK as number) && statusCode < 300;
 
-        // If data is already an object, add or overwrite status and message fields
-        const transformedResponse = {
+        const message = this.getMessageFromStatus(statusCode);
+
+        // For success-only handlers that explicitly return true,
+        // omit the data key from the global envelope.
+        if (success && data === true) {
+          return {
+            success,
+            message,
+          };
+        }
+
+        return {
           success,
-          message: this.getMessageFromStatus(statusCode),
+          message,
           data,
         };
-
-        return transformedResponse;
       }),
     );
   }

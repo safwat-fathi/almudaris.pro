@@ -5,6 +5,7 @@ import { SubmissionsService } from './submissions.service';
 import { Submission } from './entities/submission.entity';
 import { SubmissionAttachment } from './entities/attachment.entity';
 import { SubmissionAuditLog } from './entities/audit-log.entity';
+import { PermissionsGuard } from '../auth/permissions.guard';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { SubmissionAuditLog } from './entities/audit-log.entity';
     ]),
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService],
+  providers: [SubmissionsService, PermissionsGuard],
   exports: [SubmissionsService],
 })
 export class SubmissionsModule {}

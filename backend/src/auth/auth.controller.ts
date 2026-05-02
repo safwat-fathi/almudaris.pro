@@ -20,7 +20,14 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Permissions } from './permissions.decorator';
+import { Permission } from './permissions.enum';
+import { PermissionsGuard } from './permissions.guard';
 import CONSTANTS from '../common/constants';
+
+type RefreshRequestBody = {
+  refresh_token?: string;
+};
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -90,8 +97,10 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 200, description: 'OTP verified, returns JWT' })
-  async verifyOtp(@Body() body: { phone: string; otp: string }) {
-    return this.authService.verifyOtp(body.phone, body.otp);
+  async verifyOtp(
+    @Body() body: { phone: string; otp: string },
+  ): Promise<unknown> {
+    return (await this.authService.verifyOtp(body.phone, body.otp)) as unknown;
   }
 
   @Post('refresh')
@@ -119,21 +128,40 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized (Invalid or expired refresh token)',
   })
-  async refresh(@Req() req, @Body() body: any) {
-    const authHeader = req.headers['authorization'];
-    let token = body?.refresh_token;
-    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+  async refresh(
+    @Req() req: { headers: Record<string, string | string[] | undefined> },
+    @Body() body: RefreshRequestBody,
+  ) {
+    const authHeader = req.headers.authorization;
+    let token = body.refresh_token;
+
+    if (
+      !token &&
+      typeof authHeader === 'string' &&
+      authHeader.startsWith('Bearer ')
+    ) {
       token = authHeader.split(' ')[1];
     }
+
+    if (
+      !token &&
+      Array.isArray(authHeader) &&
+      authHeader[0]?.startsWith('Bearer ')
+    ) {
+      token = authHeader[0].split(' ')[1];
+    }
+
     if (!token) {
       throw new UnauthorizedException('Refresh token is required');
     }
+
     return this.authService.refreshToken(token);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.AUTH_LOGOUT)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({ summary: 'Logout a user' })
   @ApiResponse({
@@ -148,6 +176,6 @@ export class AuthController {
     // In a stateless JWT setup, logout is primarily handled by the client
     // clearing the token. We provide this endpoint for completeness, hooks,
     // or if we later decide to implement token blacklisting/cookie clearing.
-    return { message: 'Successfully logged out' };
+    return true;
   }
 }

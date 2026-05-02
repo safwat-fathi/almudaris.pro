@@ -25,16 +25,20 @@ import { UpdateChildDto } from './dto/update-child.dto';
 import { EnrollChildDto } from './dto/enroll-child.dto';
 import { ListChildrenQueryDto } from './dto/list-children-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from '../auth/permissions.decorator';
+import { Permission } from '../auth/permissions.enum';
 import CONSTANTS from 'src/common/constants';
 
 @ApiTags('children')
 @Controller('parents/children')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
 export class ChildrenController {
   constructor(private readonly childrenService: ChildrenService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.PARENT_CHILDREN_READ)
   @ApiOperation({
     summary: 'Get all children managed by the authenticated parent',
   })
@@ -61,6 +65,8 @@ export class ChildrenController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.PARENT_CHILDREN_CREATE)
   @ApiOperation({
     summary: 'Create a new child profile under the authenticated parent',
   })
@@ -83,6 +89,8 @@ export class ChildrenController {
   }
 
   @Patch(':childId')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.PARENT_CHILDREN_UPDATE)
   @ApiOperation({
     summary: 'Update a child profile',
   })
@@ -103,6 +111,8 @@ export class ChildrenController {
   }
 
   @Post(':childId/enroll')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.PARENT_CHILDREN_ENROLL)
   @ApiOperation({ summary: 'Enroll a child with a specific linked teacher' })
   @ApiParam({ name: 'childId', type: 'number' })
   @ApiBody({ type: EnrollChildDto })

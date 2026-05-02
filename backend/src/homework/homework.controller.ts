@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,18 +15,27 @@ import {
   ApiResponse,
   ApiQuery,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { HomeworkService } from './homework.service';
 import { CreateHomeworkDto } from './dto/create-homework.dto';
 import { Homework } from './entities/homework.entity';
 import { EducationStage } from '../common/grades/grade-system';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from '../auth/permissions.decorator';
+import { Permission } from '../auth/permissions.enum';
+import CONSTANTS from 'src/common/constants';
 
 @ApiTags('homework')
 @Controller('homework')
+@ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
 export class HomeworkController {
   constructor(private readonly homeworkService: HomeworkService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.HOMEWORK_CREATE)
   @ApiOperation({ summary: 'Create a new homework assignment' })
   @ApiBody({ type: CreateHomeworkDto })
   @ApiResponse({
@@ -42,6 +52,8 @@ export class HomeworkController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.HOMEWORK_READ)
   @ApiOperation({
     summary: 'Get all homework assignments with optional stage/year filters',
   })
@@ -68,6 +80,8 @@ export class HomeworkController {
   }
 
   @Get('group/:groupId')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.HOMEWORK_READ)
   @ApiOperation({
     summary: 'Get all homework assignments for a specific group',
   })
@@ -81,6 +95,8 @@ export class HomeworkController {
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.HOMEWORK_STATUS_UPDATE)
   @ApiOperation({ summary: 'Toggle homework open/closed status' })
   @ApiResponse({
     status: 200,
@@ -95,6 +111,8 @@ export class HomeworkController {
   }
 
   @Get(':id/submissions')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.HOMEWORK_SUBMISSIONS_READ)
   @ApiOperation({ summary: 'Get all submissions for a specific homework' })
   @ApiResponse({
     status: 200,

@@ -10,7 +10,7 @@
 ### Session 2026-04-10
 
 - Q: What is the user experience immediately after a parent logs in via an invitation link? → A: Show an explicit "Accept Invitation" confirmation screen with teacher details
-- Q: Handling "Already Linked" Scenarios → A: Display an explicit "You are already linked to this teacher" message with a button to continue.
+- Q: Handling "Already Linked" Scenarios → A: Display an explicit "هذا المعلم مسجل بحسابك بالفعل" message with a button to continue.
 - Q: Wrong Role Access → A: Display an access denied message specifying that the link is for parent accounts.
 - Q: Suspended/Deleted Teacher Accounts → A: Display an error stating "This invitation link is invalid or has expired."
 
@@ -22,7 +22,7 @@
 - **Native Localization**: Components shared by users (like the Teacher's QR code invitation card) must inherently use the platform's native language (Arabic), right-to-left formatting (`rtl`), and specific design system tokens. Generic or unlocalized placeholder UI immediately damages the user experience.
 - **Stateful Invitation Links**: Invitation processes that cross authentication boundaries (login, OTP, registration) must carry the intent (e.g., the `inviteCode`) forward through the entire process. Storing this via URL parameters (`?inviteCode=...`) ensures the user is seamlessly redirected back to the invitation endpoint (`/invite/[code]`) once authenticated.
 - **Dynamic Role Registration**: Registration components meant to be shared across user types (e.g., `RegistrationForm`) should avoid hardcoding user roles. Extracting the role from query parameters allows a single form to serve both independent teacher signups and parent signups originating from an invitation link.
-- **Context-Aware Error Handling**: When a user attempts to accept an invitation they are already linked to, the UI should not treat this as a hard failure. Instead, it should explicitly acknowledge the existing link ("You are already linked to this teacher") and provide a clear call-to-action to proceed to their dashboard.
+- **Context-Aware Error Handling**: When a user attempts to accept an invitation they are already linked to, the UI should not treat this as a hard failure. Instead, it should explicitly acknowledge the existing link ("هذا المعلم مسجل بحسابك بالفعل") and provide a clear call-to-action to proceed to their dashboard.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -71,7 +71,7 @@ Parents can create student accounts for their children and assign them directly 
 
 ## Edge Cases
 
-- If a parent clicks an invitation link for a teacher they are already linked to, the system MUST display an explicit "You are already linked to this teacher" message with a button to continue.
+- If a parent clicks an invitation link for a teacher they are already linked to, the system MUST display an explicit "هذا المعلم مسجل بحسابك بالفعل" message with a button to continue.
 - If the invitation link is accessed by a user who is logged in as a Teacher or Student rather than a Parent, the system MUST display an access denied message prompting them to log in with a parent account.
 - If the teacher's account is suspended or deleted after the link is shared, the system MUST display an error message stating "This invitation link is invalid or has expired" to protect the teacher's privacy.
 

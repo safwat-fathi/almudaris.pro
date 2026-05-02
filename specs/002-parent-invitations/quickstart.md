@@ -16,7 +16,7 @@
 
 3. **Accept Invitation (Existing Linked Parent)**:
    - While still logged in as the new Parent, revisit the invitation link.
-   - Verify that an explicit "You are already linked to this teacher" message is displayed, with a button to continue to the dashboard.
+   - Verify that an explicit "هذا المعلم مسجل بحسابك بالفعل" message is displayed, with a button to continue to the dashboard.
 
 4. **Add Student to Teacher**:
    - From the parent's dashboard, navigate to the "Students" section.

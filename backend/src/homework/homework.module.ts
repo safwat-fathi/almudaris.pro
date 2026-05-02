@@ -6,6 +6,7 @@ import { Homework } from './entities/homework.entity';
 import { Submission } from '../submissions/entities/submission.entity';
 import { SubmissionAttachment } from '../submissions/entities/attachment.entity';
 import { Group } from 'src/groups/entities/group.entity';
+import { PermissionsGuard } from '../auth/permissions.guard';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { Group } from 'src/groups/entities/group.entity';
     ]),
   ],
   controllers: [HomeworkController],
-  providers: [HomeworkService],
+  providers: [HomeworkService, PermissionsGuard],
   exports: [HomeworkService],
 })
 export class HomeworkModule {}

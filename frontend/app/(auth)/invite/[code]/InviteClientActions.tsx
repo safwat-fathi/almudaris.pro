@@ -14,12 +14,8 @@ export default function InviteClientActions({ code }: { code: string }) {
       setError(null);
       const res = await acceptInvitation(code);
       if (res?.error) {
-        if (res.error === "You are already linked to this teacher.") {
-          setError("أنت مرتبط بالفعل بهذا المعلم.");
-        } else {
-          setError(res.error);
-        }
-      } else {
+				setError(res.error);
+			} else {
         router.push("/dashboard");
       }
     });

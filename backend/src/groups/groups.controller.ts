@@ -28,13 +28,15 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from '../auth/permissions.decorator';
+import { Permission } from '../auth/permissions.enum';
 import { GroupStatus } from './entities/group.entity';
 import { EducationStage } from '../common/grades/grade-system';
 import CONSTANTS from 'src/common/constants';
 
 @ApiTags('groups')
 @Controller('groups')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
@@ -42,6 +44,8 @@ export class GroupsController {
   // ==================== US1: Create Group ====================
 
   @Post()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_CREATE)
   @ApiOperation({ summary: 'Create a new group or recurring series' })
   @ApiBody({ type: CreateGroupDto })
   @ApiResponse({
@@ -60,6 +64,8 @@ export class GroupsController {
   // ==================== US1: List & Get Groups ====================
 
   @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_READ)
   @ApiOperation({ summary: 'List groups for the authenticated teacher' })
   @ApiQuery({
     name: 'from',
@@ -131,6 +137,8 @@ export class GroupsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_READ)
   @ApiOperation({ summary: 'Get a single group with full details' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({
@@ -146,6 +154,8 @@ export class GroupsController {
   // ==================== US2: Update Group ====================
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_UPDATE)
   @ApiOperation({ summary: 'Update an upcoming group with edit scope support' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateGroupDto })
@@ -169,6 +179,8 @@ export class GroupsController {
   // ==================== US3: Attendance & Status ====================
 
   @Patch(':id/attendance')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_ATTENDANCE_UPDATE)
   @ApiOperation({
     summary: 'Update attendance, per-student notes, and group notes',
   })
@@ -185,6 +197,8 @@ export class GroupsController {
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_STATUS_UPDATE)
   @ApiOperation({ summary: 'Manually mark a group as Completed' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateStatusDto })
@@ -201,6 +215,8 @@ export class GroupsController {
   // ==================== US5: Cancel Group ====================
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.GROUP_CANCEL)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Cancel a group (soft-delete via Cancelled status)',

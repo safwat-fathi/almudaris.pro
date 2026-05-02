@@ -15,16 +15,18 @@ import { UpdateChildDto } from './dto/update-child.dto';
 import { ListChildrenQueryDto } from './dto/list-children-query.dto';
 import { EnrollChildDto } from './dto/enroll-child.dto';
 import {
+  EducationStage,
   isValidGrade,
   formatGradeLabel,
   EDUCATION_STAGE_YEARS,
 } from '../common/grades/grade-system';
+import { Student } from '../students/entities/student.entity';
 
 export interface ChildResponse {
   id: number;
   name: string;
   email?: string;
-  education_stage: string;
+  education_stage: EducationStage;
   education_year: number;
   grade_label: string;
   grade_needs_review: boolean;
@@ -35,24 +37,26 @@ export class ChildrenService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Student)
+    private readonly studentsRepository: Repository<Student>,
     @InjectRepository(ChildTeacherEnrollment)
     private readonly childTeacherEnrollmentRepository: Repository<ChildTeacherEnrollment>,
     @InjectRepository(ParentTeacherLink)
     private readonly parentTeacherLinkRepository: Repository<ParentTeacherLink>,
   ) {}
 
-  private mapChildResponse(child: User): ChildResponse {
+  private mapChildResponse(student: Student): ChildResponse {
     return {
-      id: child.id,
-      name: child.name,
-      email: child.email,
-      education_stage: child.education_stage,
-      education_year: child.education_year,
+      id: student.user_id,
+      name: student.user.name,
+      email: student.user.email,
+      education_stage: student.education_stage,
+      education_year: student.education_year,
       grade_label: formatGradeLabel(
-        child.education_stage,
-        child.education_year,
+        student.education_stage,
+        student.education_year,
       ),
-      grade_needs_review: child.grade_needs_review,
+      grade_needs_review: student.grade_needs_review,
     };
   }
 
@@ -66,14 +70,13 @@ export class ChildrenService {
       !isValidGrade(filters.education_stage, filters.education_year)
     ) {
       throw new BadRequestException(
-        `Invalid education_stage/education_year combination.`,
+        'Invalid education_stage/education_year combination.',
       );
     }
 
-    const children = await this.usersRepository.find({
+    const children = await this.studentsRepository.find({
       where: {
-        parent: { id: parentId },
-        role: UserRole.STUDENT,
+        parent_id: parentId,
         ...(filters?.education_stage !== undefined
           ? { education_stage: filters.education_stage }
           : {}),
@@ -81,10 +84,10 @@ export class ChildrenService {
           ? { education_year: filters.education_year }
           : {}),
       },
-      relations: ['parent'],
+      relations: ['user'],
     });
 
-    return children.map((c) => this.mapChildResponse(c));
+    return children.map((child) => this.mapChildResponse(child));
   }
 
   async createChild(
@@ -94,6 +97,7 @@ export class ChildrenService {
     const parent = await this.usersRepository.findOne({
       where: { id: parentId, role: UserRole.PARENT },
     });
+
     if (!parent) {
       throw new UnauthorizedException('Valid parent account required.');
     }
@@ -117,41 +121,58 @@ export class ChildrenService {
       ? createChildDto.email.trim().toLowerCase()
       : null;
 
-    const existingChildren = await this.usersRepository.find({
-      where: {
-        parent: { id: parentId },
-        role: UserRole.STUDENT,
-      },
+    const existingChildren = await this.studentsRepository.find({
+      where: { parent_id: parentId },
+      relations: ['user'],
     });
 
-    const duplicate = existingChildren.find((child) => {
-      const childName = child.name.trim().toLowerCase().replace(/\s+/g, ' ');
-      const childEmail = child.email ? child.email.trim().toLowerCase() : null;
+    const duplicate = existingChildren.find((student) => {
+      const childName = student.user.name
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+      const childEmail = student.user.email
+        ? student.user.email.trim().toLowerCase()
+        : null;
       return childName === normalizedName && childEmail === normalizedEmail;
     });
 
     if (duplicate) {
-      throw new ConflictException(
-        // 'A child with the same name and identifier already exists.',
-        'هذا الطالب موجود بالفعل',
-      );
+      throw new ConflictException('هذا الطالب موجود بالفعل');
     }
 
-    // A child is simply a user with role STUDENT and a parent relation
-    // We skip password generation for now, real app may require an onboarding step
-    const newChild = this.usersRepository.create({
-      name: createChildDto.name,
-      email: createChildDto.email,
-      role: UserRole.STUDENT,
-      parent: parent,
-      password: 'no-password', // Placeholder for DB constraint
-      education_stage: createChildDto.education_stage,
-      education_year: createChildDto.education_year,
-      grade_needs_review: false,
-    });
+    const savedStudent = await this.usersRepository.manager.transaction(
+      async (manager) => {
+        const userRepo = manager.getRepository(User);
+        const studentRepo = manager.getRepository(Student);
 
-    const saved = await this.usersRepository.save(newChild);
-    return this.mapChildResponse(saved);
+        const childUser = userRepo.create({
+          name: createChildDto.name,
+          email: createChildDto.email,
+          role: UserRole.STUDENT,
+          password: 'no-password',
+        });
+
+        const savedUser = await userRepo.save(childUser);
+
+        const studentProfile = studentRepo.create({
+          user_id: savedUser.id,
+          parent_id: parentId,
+          education_stage: createChildDto.education_stage,
+          education_year: createChildDto.education_year,
+          grade_needs_review: false,
+        });
+
+        await studentRepo.save(studentProfile);
+
+        return studentRepo.findOneOrFail({
+          where: { user_id: savedUser.id },
+          relations: ['user'],
+        });
+      },
+    );
+
+    return this.mapChildResponse(savedStudent);
   }
 
   async updateChild(
@@ -159,20 +180,20 @@ export class ChildrenService {
     childId: number,
     updateDto: UpdateChildDto,
   ): Promise<ChildResponse> {
-    const child = await this.usersRepository.findOne({
+    const student = await this.studentsRepository.findOne({
       where: {
-        id: childId,
-        parent: { id: parentId },
-        role: UserRole.STUDENT,
+        user_id: childId,
+        parent_id: parentId,
       },
+      relations: ['user'],
     });
 
-    if (!child) {
+    if (!student) {
       throw new NotFoundException('Child not found or does not belong to you.');
     }
 
-    const stage = updateDto.education_stage ?? child.education_stage;
-    const year = updateDto.education_year ?? child.education_year;
+    const stage = updateDto.education_stage ?? student.education_stage;
+    const year = updateDto.education_year ?? student.education_year;
 
     if (
       updateDto.education_stage !== undefined ||
@@ -180,22 +201,26 @@ export class ChildrenService {
     ) {
       if (!isValidGrade(stage, year)) {
         throw new BadRequestException(
-          `Invalid education_stage/education_year combination.`,
+          'Invalid education_stage/education_year combination.',
         );
       }
-      child.education_stage = stage;
-      child.education_year = year;
-      child.grade_needs_review = false;
+
+      student.education_stage = stage;
+      student.education_year = year;
+      student.grade_needs_review = false;
     }
 
     if (updateDto.name !== undefined) {
-      child.name = updateDto.name;
-    }
-    if (updateDto.email !== undefined) {
-      child.email = updateDto.email;
+      student.user.name = updateDto.name;
     }
 
-    const saved = await this.usersRepository.save(child);
+    if (updateDto.email !== undefined) {
+      student.user.email = updateDto.email;
+    }
+
+    await this.usersRepository.save(student.user);
+    const saved = await this.studentsRepository.save(student);
+
     return this.mapChildResponse(saved);
   }
 
@@ -203,13 +228,11 @@ export class ChildrenService {
     parentId: number,
     childId: number,
     enrollDto: EnrollChildDto,
-  ): Promise<{ success: boolean; message: string }> {
-    // 1. Verify child belongs to parent
-    const child = await this.usersRepository.findOne({
+  ): Promise<boolean> {
+    const child = await this.studentsRepository.findOne({
       where: {
-        id: childId,
-        parent: { id: parentId },
-        role: UserRole.STUDENT,
+        user_id: childId,
+        parent_id: parentId,
       },
     });
 
@@ -217,7 +240,6 @@ export class ChildrenService {
       throw new NotFoundException('Child not found or does not belong to you.');
     }
 
-    // 2. Verify parent is linked to this teacher
     const isLinkedToTeacher = await this.parentTeacherLinkRepository.findOne({
       where: { parent_id: parentId, teacher_id: enrollDto.teacherId },
     });
@@ -228,7 +250,6 @@ export class ChildrenService {
       );
     }
 
-    // 3. Verify teacher exists
     const teacher = await this.usersRepository.findOne({
       where: { id: enrollDto.teacherId, role: UserRole.TEACHER },
     });
@@ -237,28 +258,22 @@ export class ChildrenService {
       throw new NotFoundException('Teacher not found.');
     }
 
-    // 4. Enroll child
     const existingEnrollment =
       await this.childTeacherEnrollmentRepository.findOne({
         where: { student_id: childId, teacher_id: teacher.id },
       });
 
     if (existingEnrollment) {
-      throw new ConflictException(
-        'Child is already enrolled with this teacher.',
-      );
+      throw new ConflictException('هذا الابن تم تسجيله بالفعل لدي هذا المعلم.');
     }
 
     const enrollment = this.childTeacherEnrollmentRepository.create({
-      student_id: child.id,
+      student_id: child.user_id,
       teacher_id: teacher.id,
     });
 
     await this.childTeacherEnrollmentRepository.save(enrollment);
 
-    return {
-      success: true,
-      message: 'Child successfully enrolled with teacher.',
-    };
+    return true;
   }
 }

@@ -9,6 +9,9 @@ import {
 import { ParentsService } from './parents.service';
 import { LinkTeacherDto } from './dto/link-teacher.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from '../auth/permissions.decorator';
+import { Permission } from '../auth/permissions.enum';
 import CONSTANTS from 'src/common/constants';
 
 @ApiTags('parents')
@@ -17,7 +20,8 @@ export class ParentsController {
   constructor(private readonly parentsService: ParentsService) {}
 
   @Post('link-teacher')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.PARENT_TEACHER_LINK)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({
     summary:
@@ -31,13 +35,17 @@ export class ParentsController {
     description: 'Invalid or expired invitation link.',
   })
   @ApiResponse({ status: 409, description: 'Already linked to this teacher.' })
-  async linkTeacher(@Req() req, @Body() linkTeacherDto: LinkTeacherDto) {
+  async linkTeacher(
+    @Req() req: { user: { userId: number } },
+    @Body() linkTeacherDto: LinkTeacherDto,
+  ) {
     const parentId = req.user.userId; // Provided by JwtStrategy
     return this.parentsService.linkTeacher(parentId, linkTeacherDto.inviteCode);
   }
 
   @Get('teachers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.PARENT_TEACHERS_READ)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({
     summary: 'List all teachers linked to the authenticated parent',
@@ -47,7 +55,7 @@ export class ParentsController {
     description: 'Returns a list of linked teachers.',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getLinkedTeachers(@Req() req) {
+  async getLinkedTeachers(@Req() req: { user: { userId: number } }) {
     const parentId = req.user.userId;
     return this.parentsService.getLinkedTeachers(parentId);
   }

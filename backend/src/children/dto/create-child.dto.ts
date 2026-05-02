@@ -16,15 +16,6 @@ export class CreateChildDto {
   @IsOptional()
   email?: string;
 
-  @ApiPropertyOptional({
-    description:
-      'A unique code if the teacher required one upon linking (business logic)',
-    example: 'abcde',
-  })
-  @IsString()
-  @IsOptional()
-  inviteCode?: string;
-
   @ApiProperty({
     description: 'The education stage of the child',
     enum: EducationStage,

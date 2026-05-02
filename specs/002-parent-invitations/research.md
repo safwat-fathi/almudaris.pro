@@ -18,6 +18,6 @@
    - **Alternatives considered**: Hardcoding roles in separate components. Rejected due to code duplication and maintenance overhead.
 
 4. **Already Linked Scenarios**:
-   - **Decision**: Treat as a recognized state, not a hard error. Display an explicit "You are already linked to this teacher" message with a CTA to proceed to the dashboard.
+   - **Decision**: Treat as a recognized state, not a hard error. Display an explicit "هذا المعلم مسجل بحسابك بالفعل" message with a CTA to proceed to the dashboard.
    - **Rationale**: Provides a better user experience than a generic error message, acknowledging the existing relationship.
    - **Alternatives considered**: Redirecting silently or showing a standard error page. Rejected because it causes confusion.

@@ -18,6 +18,9 @@ import {
 } from '@nestjs/swagger';
 import { TeachersService } from './teachers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from '../auth/permissions.decorator';
+import { Permission } from '../auth/permissions.enum';
 import CONSTANTS from 'src/common/constants';
 import { EducationStage } from 'src/common/grades/grade-system';
 
@@ -34,7 +37,8 @@ export class TeachersController {
    * Only accessible by users with the Teacher role.
    */
   @Get('invite-code')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.TEACHER_INVITE_CODE_READ)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({
     summary: 'Get or generate the invite code for the authenticated teacher',
@@ -58,7 +62,8 @@ export class TeachersController {
    * Retrieves all students enrolled with the currently authenticated teacher.
    */
   @Get('students')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.TEACHER_STUDENTS_READ)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({
     summary: 'Get all students enrolled with the authenticated teacher',
@@ -96,7 +101,8 @@ export class TeachersController {
    * Retrieves details of a specific student enrolled with the currently authenticated teacher.
    */
   @Get('students/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.TEACHER_STUDENT_DETAIL_READ)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({
     summary:
@@ -122,7 +128,8 @@ export class TeachersController {
    * Removes a student from the authenticated teacher's class.
    */
   @Delete('students/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(Permission.TEACHER_STUDENT_REMOVE)
   @ApiBearerAuth(CONSTANTS.ACCESS_TOKEN)
   @ApiOperation({
     summary: "Remove a student from the authenticated teacher's class",

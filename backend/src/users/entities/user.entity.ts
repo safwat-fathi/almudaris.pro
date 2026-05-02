@@ -7,16 +7,13 @@ import {
   DeleteDateColumn,
   BeforeInsert,
   BeforeUpdate,
-  ManyToOne,
   OneToMany,
-  Check,
-  JoinColumn,
-  Index,
-  AfterLoad,
+  OneToOne,
 } from 'typeorm';
 import { genSalt, hash } from 'bcrypt';
 import { Exclude } from 'class-transformer';
-import { EducationStage, formatGradeLabel } from '../../common/grades/grade-system';
+import { Teacher } from '../../teachers/entities/teacher.entity';
+import { Student } from '../../students/entities/student.entity';
 
 export enum UserRole {
   TEACHER = 'teacher',
@@ -25,14 +22,6 @@ export enum UserRole {
 }
 
 @Entity('users')
-@Check(`"invite_code" IS NULL OR "role" = 'teacher'`)
-@Check(`"parent_id" IS NULL OR "role" = 'student'`)
-@Check(`(
-  ("education_stage" = 'PRIMARY' AND "education_year" BETWEEN 1 AND 6)
-  OR ("education_stage" IN ('PREPARATORY', 'SECONDARY') AND "education_year" BETWEEN 1 AND 3)
-  OR ("education_stage" = 'UNASSIGNED' AND "education_year" = 0)
-)`)
-@Index(['education_stage', 'education_year'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -56,34 +45,17 @@ export class User {
   @Column({ type: 'text', unique: true, nullable: true })
   email?: string;
 
-  @Column({ type: 'text', unique: true, nullable: true })
-  invite_code?: string;
-
   @Column({ type: 'text', nullable: true, default: 'Africa/Cairo' })
   timezone?: string;
 
-  @Column({
-    type: 'enum',
-    enum: EducationStage,
-    default: EducationStage.UNASSIGNED,
-  })
-  education_stage: EducationStage;
+  @OneToOne(() => Teacher, (teacher) => teacher.user)
+  teacherProfile?: Teacher;
 
-  @Column({ type: 'int', default: 0 })
-  education_year: number;
+  @OneToOne(() => Student, (student) => student.user)
+  studentProfile?: Student;
 
-  @Column({ type: 'text', nullable: true })
-  legacy_grade?: string;
-
-  @Column({ type: 'boolean', default: true })
-  grade_needs_review: boolean;
-
-  @ManyToOne(() => User, (user) => user.children, { nullable: true })
-  @JoinColumn({ name: 'parent_id' })
-  parent?: User;
-
-  @OneToMany(() => User, (user) => user.parent)
-  children?: User[];
+  @OneToMany(() => Student, (student) => student.parent)
+  children?: Student[];
 
   @Exclude()
   @Column({ type: 'text', select: false })
@@ -98,26 +70,12 @@ export class User {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  // ==================== Hooks ====================
-
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
     if (this.password && !this.password.startsWith('$2')) {
-      // Only hash if not already hashed (bcrypt hashes start with $2)
       const salt = await genSalt();
       this.password = await hash(this.password, salt);
-    }
-  }
-
-  grade_label?: string;
-
-  @AfterLoad()
-  @BeforeInsert()
-  @BeforeUpdate()
-  computeGradeLabel() {
-    if (this.role === UserRole.STUDENT && this.education_stage !== undefined && this.education_year !== undefined) {
-      this.grade_label = formatGradeLabel(this.education_stage, this.education_year);
     }
   }
 }

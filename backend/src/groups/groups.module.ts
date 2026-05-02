@@ -7,6 +7,7 @@ import { GroupStudent } from './entities/group-student.entity';
 import { RecurringSeries } from './entities/recurring-series.entity';
 import { User } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
+import { PermissionsGuard } from '../auth/permissions.guard';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrol
     ]),
   ],
   controllers: [GroupsController],
-  providers: [GroupsService],
+  providers: [GroupsService, PermissionsGuard],
   exports: [GroupsService],
 })
 export class GroupsModule {}

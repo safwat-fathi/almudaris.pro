@@ -5,12 +5,19 @@ import { ChildrenService } from './children.service';
 import { User } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from './entities/child-teacher-enrollment.entity';
 import { ParentTeacherLink } from '../parents/entities/parent-teacher-link.entity';
+import { Student } from '../students/entities/student.entity';
+import { PermissionsGuard } from '../auth/permissions.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, ChildTeacherEnrollment, ParentTeacherLink]),
+    TypeOrmModule.forFeature([
+      User,
+      Student,
+      ChildTeacherEnrollment,
+      ParentTeacherLink,
+    ]),
   ],
   controllers: [ChildrenController],
-  providers: [ChildrenService],
+  providers: [ChildrenService, PermissionsGuard],
 })
 export class ChildrenModule {}

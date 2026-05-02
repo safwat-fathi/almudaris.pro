@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ParentTeacherLink } from './entities/parent-teacher-link.entity';
 import { User, UserRole } from '../users/entities/user.entity';
+import { Teacher } from '../teachers/entities/teacher.entity';
 
 @Injectable()
 export class ParentsService {
@@ -16,13 +17,11 @@ export class ParentsService {
     private readonly parentTeacherLinkRepository: Repository<ParentTeacherLink>,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(Teacher)
+    private readonly teachersRepository: Repository<Teacher>,
   ) {}
 
-  async linkTeacher(
-    parentId: number,
-    inviteCode: string,
-  ): Promise<{ success: boolean; message: string }> {
-    // Validate parent
+  async linkTeacher(parentId: number, inviteCode: string): Promise<boolean> {
     const parent = await this.usersRepository.findOne({
       where: { id: parentId, role: UserRole.PARENT },
     });
@@ -32,35 +31,36 @@ export class ParentsService {
       );
     }
 
-    // Find teacher by invite code
-    const teacher = await this.usersRepository.findOne({
-      where: { invite_code: inviteCode, role: UserRole.TEACHER },
+    const teacherProfile = await this.teachersRepository.findOne({
+      where: { invite_code: inviteCode },
+      relations: ['user'],
     });
-    if (!teacher || !teacher.is_active) {
+
+    if (
+      !teacherProfile ||
+      !teacherProfile.user ||
+      teacherProfile.user.role !== UserRole.TEACHER ||
+      !teacherProfile.user.is_active
+    ) {
       throw new NotFoundException('Invalid or expired invitation link.');
     }
 
-    // Check if link already exists
     const existingLink = await this.parentTeacherLinkRepository.findOne({
-      where: { parent_id: parentId, teacher_id: teacher.id },
+      where: { parent_id: parentId, teacher_id: teacherProfile.user_id },
     });
 
     if (existingLink) {
-      throw new ConflictException('You are already linked to this teacher.');
+      throw new ConflictException('هذا المعلم مسجل بحسابك بالفعل.');
     }
 
-    // Create link
     const newLink = this.parentTeacherLinkRepository.create({
       parent_id: parentId,
-      teacher_id: teacher.id,
+      teacher_id: teacherProfile.user_id,
     });
 
     await this.parentTeacherLinkRepository.save(newLink);
 
-    return {
-      success: true,
-      message: 'Successfully linked to teacher.',
-    };
+    return true;
   }
 
   async getLinkedTeachers(parentId: number) {
@@ -69,11 +69,8 @@ export class ParentsService {
       relations: ['teacher'],
     });
 
-    return links.map((link) => {
-      // Exclude sensitive information
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...teacherData } = link.teacher;
-      return teacherData;
-    });
+    // TODO: get teacher profile info from Teacher entity
+
+    return links.map((link) => link.teacher);
   }
 }
