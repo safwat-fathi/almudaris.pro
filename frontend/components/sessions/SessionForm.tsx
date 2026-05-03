@@ -117,172 +117,6 @@ export default function SessionForm({
 					</div>
 				)}
 
-				{/* Session Name / Title */}
-				<div className="space-y-2">
-					<label className="text-on-surface font-semibold px-1">
-						اسم الحصة (اختياري)
-					</label>
-					<Input
-						name="title"
-						type="text"
-						defaultValue={group?.title || ""}
-						placeholder="مثال: مراجعة الباب الأول"
-						icon="edit"
-					/>
-					{state.fieldErrors?.title && (
-						<p className="text-red-500 text-xs px-1">
-							{state.fieldErrors.title[0]}
-						</p>
-					)}
-				</div>
-
-				{/* Date Row */}
-				<div className="space-y-2">
-					<label className="text-on-surface font-semibold px-1">التاريخ</label>
-					<Input
-						name="date"
-						type="date"
-						required
-						defaultValue={group?.date || new Date().toISOString().split("T")[0]}
-						icon="calendar_today"
-					/>
-					{state.fieldErrors?.date && (
-						<p className="text-red-500 text-xs px-1">
-							{state.fieldErrors.date[0]}
-						</p>
-					)}
-				</div>
-
-				{/* Time & Duration Row */}
-				<div className="grid grid-cols-2 gap-4">
-					<div className="space-y-2">
-						<label className="text-on-surface font-semibold px-1">
-							وقت البدء (UTC)
-						</label>
-						<Input
-							name="start_time"
-							type="time"
-							required
-							defaultValue={group?.start_time ? formatTimeUI(group.start_time) : "17:00"}
-							icon="schedule"
-						/>
-						{state.fieldErrors?.start_time && (
-							<p className="text-red-500 text-xs px-1">
-								{state.fieldErrors.start_time[0]}
-							</p>
-						)}
-					</div>
-
-					<div className="space-y-2">
-						<label className="text-on-surface font-semibold px-1">
-							المدة (بالدقائق)
-						</label>
-						<Input
-							name="duration_minutes"
-							type="number"
-							required
-							defaultValue={group?.duration_minutes || 60}
-							min={15}
-							icon="timer"
-						/>
-						{state.fieldErrors?.duration_minutes && (
-							<p className="text-red-500 text-xs px-1">
-								{state.fieldErrors.duration_minutes[0]}
-							</p>
-						)}
-					</div>
-				</div>
-
-				{/* Student Selection */}
-				<div className="space-y-2">
-					<label className="text-on-surface font-semibold px-1">الطلاب</label>
-					<select
-						name="student_ids"
-						multiple
-						required
-						value={selectedCompatibleStudentIds.map(String)}
-						onChange={e => {
-							const values = Array.from(e.target.selectedOptions, option =>
-								Number(option.value),
-							);
-							const preservedIncompatible =
-								incompatibleAssignedStudentIds.filter(
-									studentId => !values.includes(studentId),
-								);
-							setSelectedStudentIds([
-								...values,
-								...preservedIncompatible,
-							]);
-						}}
-						className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3 h-32 focus:outline-none focus:ring-2 focus:ring-primary/20 custom-scrollbar"
-					>
-						{compatibleStudents.map(s => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</select>
-					<p className="text-[10px] text-outline px-1 font-medium">
-						يمكنك اختيار أكثر من طالب بالضغط المطول أو السحب
-					</p>
-					{state.fieldErrors?.student_ids && (
-						<p className="text-red-500 text-xs px-1">
-							{state.fieldErrors.student_ids[0]}
-						</p>
-					)}
-				</div>
-
-				{hasIncompatibleAssigned ? (
-					<div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
-						<div className="space-y-1">
-							<p className="text-sm font-bold text-red-700">
-								طلاب غير متوافقين مع المرحلة/الصف الحالي
-							</p>
-							<p className="text-xs text-red-700/90">
-								يجب إزالة الطلاب التاليين قبل حفظ التعديلات.
-							</p>
-						</div>
-						<div className="space-y-2">
-							{incompatibleAssignedStudentIds.map(studentId => {
-								const studentProfile = studentsById.get(studentId);
-								const assignedSnapshot = assignedStudentsById.get(studentId);
-								const studentName =
-									studentProfile?.name ||
-									assignedSnapshot?.student_name ||
-									`#${studentId}`;
-								const studentGrade = studentProfile?.grade_label;
-
-								return (
-									<div
-										key={studentId}
-										className="flex items-center justify-between rounded-lg border border-red-200 bg-white px-3 py-2"
-									>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-semibold text-red-800">
-												{studentName}
-											</p>
-											{studentGrade ? (
-												<p className="text-xs text-red-700/90">{studentGrade}</p>
-											) : null}
-										</div>
-										<button
-											type="button"
-											onClick={() =>
-												setSelectedStudentIds(prev =>
-													prev.filter(id => id !== studentId),
-												)
-											}
-											className="rounded-md bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
-										>
-											إزالة
-										</button>
-									</div>
-								);
-							})}
-						</div>
-					</div>
-				) : null}
-
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="space-y-2">
 						<label className="text-on-surface font-semibold px-1">
@@ -332,6 +166,178 @@ export default function SessionForm({
 						)}
 					</div>
 				</div>
+
+				{/* Session Name / Title */}
+				<div className="space-y-2">
+					<label className="text-on-surface font-semibold px-1">
+						اسم الحصة (اختياري)
+					</label>
+					<Input
+						name="title"
+						type="text"
+						defaultValue={group?.title || ""}
+						placeholder="مثال: مراجعة الباب الأول"
+						icon="edit"
+					/>
+					{state.fieldErrors?.title && (
+						<p className="text-red-500 text-xs px-1">
+							{state.fieldErrors.title[0]}
+						</p>
+					)}
+				</div>
+
+				{/* Date Row */}
+				<div className="space-y-2">
+					<label className="text-on-surface font-semibold px-1">التاريخ</label>
+					<Input
+						name="date"
+						type="date"
+						required
+						defaultValue={group?.date || new Date().toISOString().split("T")[0]}
+						icon="calendar_today"
+					/>
+					{state.fieldErrors?.date && (
+						<p className="text-red-500 text-xs px-1">
+							{state.fieldErrors.date[0]}
+						</p>
+					)}
+				</div>
+
+				{/* Time & Duration Row */}
+				<div className="grid grid-cols-2 gap-4">
+					<div className="space-y-2">
+						<label className="text-on-surface font-semibold px-1">
+							وقت البدء (UTC)
+						</label>
+						<Input
+							name="start_time"
+							type="time"
+							required
+							defaultValue={
+								group?.start_time ? formatTimeUI(group.start_time) : "17:00"
+							}
+							icon="schedule"
+						/>
+						{state.fieldErrors?.start_time && (
+							<p className="text-red-500 text-xs px-1">
+								{state.fieldErrors.start_time[0]}
+							</p>
+						)}
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-on-surface font-semibold px-1">
+							المدة (بالدقائق)
+						</label>
+						<Input
+							name="duration_minutes"
+							type="number"
+							required
+							defaultValue={group?.duration_minutes || 60}
+							min={15}
+							icon="timer"
+						/>
+						{state.fieldErrors?.duration_minutes && (
+							<p className="text-red-500 text-xs px-1">
+								{state.fieldErrors.duration_minutes[0]}
+							</p>
+						)}
+					</div>
+				</div>
+
+				{/* Student Selection */}
+				<div className="space-y-2">
+					<label className="text-on-surface font-semibold px-1">الطلاب</label>
+					<select
+						name="student_ids"
+						multiple
+						required
+						value={selectedCompatibleStudentIds.map(String)}
+						onChange={e => {
+							const values = Array.from(e.target.selectedOptions, option =>
+								Number(option.value),
+							);
+							const preservedIncompatible =
+								incompatibleAssignedStudentIds.filter(
+									studentId => !values.includes(studentId),
+								);
+							setSelectedStudentIds([...values, ...preservedIncompatible]);
+						}}
+						className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3 h-32 focus:outline-none focus:ring-2 focus:ring-primary/20 custom-scrollbar"
+					>
+						{compatibleStudents.map(s => (
+							<option key={s.id} value={s.id}>
+								{s.name}
+							</option>
+						))}
+					</select>
+					{compatibleStudents.length === 0 ? (
+						<p className="text-xs text-on-surface-variant px-1 font-medium">
+							لا يوجد طلاب متاحون لهذه المرحلة والصف حالياً.
+						</p>
+					) : null}
+					<p className="text-[10px] text-outline px-1 font-medium">
+						يمكنك اختيار أكثر من طالب بالضغط المطول أو السحب
+					</p>
+					{state.fieldErrors?.student_ids && (
+						<p className="text-red-500 text-xs px-1">
+							{state.fieldErrors.student_ids[0]}
+						</p>
+					)}
+				</div>
+
+				{hasIncompatibleAssigned ? (
+					<div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
+						<div className="space-y-1">
+							<p className="text-sm font-bold text-red-700">
+								طلاب غير متوافقين مع المرحلة/الصف الحالي
+							</p>
+							<p className="text-xs text-red-700/90">
+								يجب إزالة الطلاب التاليين قبل حفظ التعديلات.
+							</p>
+						</div>
+						<div className="space-y-2">
+							{incompatibleAssignedStudentIds.map(studentId => {
+								const studentProfile = studentsById.get(studentId);
+								const assignedSnapshot = assignedStudentsById.get(studentId);
+								const studentName =
+									studentProfile?.name ||
+									assignedSnapshot?.student_name ||
+									`#${studentId}`;
+								const studentGrade = studentProfile?.grade_label;
+
+								return (
+									<div
+										key={studentId}
+										className="flex items-center justify-between rounded-lg border border-red-200 bg-white px-3 py-2"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-semibold text-red-800">
+												{studentName}
+											</p>
+											{studentGrade ? (
+												<p className="text-xs text-red-700/90">
+													{studentGrade}
+												</p>
+											) : null}
+										</div>
+										<button
+											type="button"
+											onClick={() =>
+												setSelectedStudentIds(prev =>
+													prev.filter(id => id !== studentId),
+												)
+											}
+											className="rounded-md bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+										>
+											إزالة
+										</button>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				) : null}
 
 				{/* Location Picker */}
 				<div className="space-y-2">
@@ -487,10 +493,11 @@ export default function SessionForm({
 					</div>
 				)}
 				{/* Bottom CTA Wrapper */}
-				<div 
-					className={isBottomSheet 
-						? "sticky bottom-0 -mx-6 px-6 py-4 bg-surface/95 backdrop-blur-md border-t border-outline-variant/10 z-40 mt-8"
-						: "fixed bottom-[88px] left-0 right-0 p-6 bg-surface/90 backdrop-blur-lg border-t border-outline-variant/10 z-40"
+				<div
+					className={
+						isBottomSheet
+							? "sticky bottom-0 -mx-6 px-6 py-4 bg-surface/95 backdrop-blur-md border-t border-outline-variant/10 z-40 mt-8"
+							: "fixed bottom-[88px] left-0 right-0 p-6 bg-surface/90 backdrop-blur-lg border-t border-outline-variant/10 z-40"
 					}
 				>
 					<button
