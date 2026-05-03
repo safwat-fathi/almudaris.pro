@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import CONSTANTS from "@/lib/constants";
 import { ChildrenListClient } from "@/components/children/ChildrenListClient";
+import type { EducationStage } from "@/types/grade";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -9,9 +10,10 @@ type Child = {
   id: number;
   name: string;
   email?: string;
-  education_stage?: string;
+  education_stage?: EducationStage;
   education_year?: number;
   grade_label?: string;
+  grade_needs_review?: boolean;
   image?: string;
 };
 

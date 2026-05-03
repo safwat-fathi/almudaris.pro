@@ -4,6 +4,13 @@ import { useState, useActionState, useEffect } from "react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Group, LocationType } from "@/services/api/groups";
+import { Student } from "@/services/api/teachers";
+import {
+	EDUCATION_STAGE_LABELS,
+	EDUCATION_STAGE_YEARS,
+	EDUCATION_YEAR_LABELS,
+	type EducationStage,
+} from "@/types/grade";
 import { formatTimeUI } from "@/lib/format";
 import {
 	createGroupAction,
@@ -14,7 +21,7 @@ import {
 interface SessionFormProps {
 	isEdit?: boolean;
 	group?: Group;
-	students: { id: number; name: string }[];
+	students: Student[];
 	isBottomSheet?: boolean;
 	onSuccess?: () => void;
 }
@@ -42,6 +49,49 @@ export default function SessionForm({
 	const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>(
 		group?.students.map(s => s.student_id) || [],
 	);
+	const [educationStage, setEducationStage] = useState<EducationStage>(
+		group?.education_stage && group.education_stage !== "UNASSIGNED"
+			? group.education_stage
+			: "PRIMARY",
+	);
+	const [educationYear, setEducationYear] = useState<number>(
+		group?.education_year && group.education_year > 0 ? group.education_year : 1,
+	);
+
+	const availableYears = EDUCATION_STAGE_YEARS[educationStage].filter(
+		year => year > 0,
+	);
+	const compatibleStudents = students.filter(
+		student =>
+			student.education_stage === educationStage &&
+			student.education_year === educationYear,
+	);
+	const compatibleStudentIds = new Set(compatibleStudents.map(student => student.id));
+	const assignedStudentsById = new Map(
+		(group?.students || []).map(student => [student.student_id, student]),
+	);
+	const studentsById = new Map(students.map(student => [student.id, student]));
+	const incompatibleAssignedStudentIds = isEdit
+		? selectedStudentIds.filter(studentId => !compatibleStudentIds.has(studentId))
+		: [];
+	const selectedCompatibleStudentIds = selectedStudentIds.filter(studentId =>
+		compatibleStudentIds.has(studentId),
+	);
+	const hasIncompatibleAssigned = isEdit && incompatibleAssignedStudentIds.length > 0;
+	const submitLockReason = hasIncompatibleAssigned
+		? "لا يمكن حفظ التعديلات قبل إزالة الطلاب غير المتوافقين مع المرحلة والصف الحاليين."
+		: null;
+
+	const handleEducationStageChange = (
+		event: React.ChangeEvent<HTMLSelectElement>,
+	) => {
+		const nextStage = event.target.value as EducationStage;
+		const nextYears = EDUCATION_STAGE_YEARS[nextStage].filter(year => year > 0);
+		setEducationStage(nextStage);
+		if (!nextYears.includes(educationYear)) {
+			setEducationYear(nextYears[0] ?? 1);
+		}
+	};
 
 	useEffect(() => {
 		if (state.success && onSuccess) {
@@ -150,16 +200,23 @@ export default function SessionForm({
 						name="student_ids"
 						multiple
 						required
-						value={selectedStudentIds.map(String)}
+						value={selectedCompatibleStudentIds.map(String)}
 						onChange={e => {
 							const values = Array.from(e.target.selectedOptions, option =>
 								Number(option.value),
 							);
-							setSelectedStudentIds(values);
+							const preservedIncompatible =
+								incompatibleAssignedStudentIds.filter(
+									studentId => !values.includes(studentId),
+								);
+							setSelectedStudentIds([
+								...values,
+								...preservedIncompatible,
+							]);
 						}}
 						className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3 h-32 focus:outline-none focus:ring-2 focus:ring-primary/20 custom-scrollbar"
 					>
-						{students.map(s => (
+						{compatibleStudents.map(s => (
 							<option key={s.id} value={s.id}>
 								{s.name}
 							</option>
@@ -173,6 +230,107 @@ export default function SessionForm({
 							{state.fieldErrors.student_ids[0]}
 						</p>
 					)}
+				</div>
+
+				{hasIncompatibleAssigned ? (
+					<div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
+						<div className="space-y-1">
+							<p className="text-sm font-bold text-red-700">
+								طلاب غير متوافقين مع المرحلة/الصف الحالي
+							</p>
+							<p className="text-xs text-red-700/90">
+								يجب إزالة الطلاب التاليين قبل حفظ التعديلات.
+							</p>
+						</div>
+						<div className="space-y-2">
+							{incompatibleAssignedStudentIds.map(studentId => {
+								const studentProfile = studentsById.get(studentId);
+								const assignedSnapshot = assignedStudentsById.get(studentId);
+								const studentName =
+									studentProfile?.name ||
+									assignedSnapshot?.student_name ||
+									`#${studentId}`;
+								const studentGrade = studentProfile?.grade_label;
+
+								return (
+									<div
+										key={studentId}
+										className="flex items-center justify-between rounded-lg border border-red-200 bg-white px-3 py-2"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-semibold text-red-800">
+												{studentName}
+											</p>
+											{studentGrade ? (
+												<p className="text-xs text-red-700/90">{studentGrade}</p>
+											) : null}
+										</div>
+										<button
+											type="button"
+											onClick={() =>
+												setSelectedStudentIds(prev =>
+													prev.filter(id => id !== studentId),
+												)
+											}
+											className="rounded-md bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+										>
+											إزالة
+										</button>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				) : null}
+
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div className="space-y-2">
+						<label className="text-on-surface font-semibold px-1">
+							المرحلة الدراسية
+						</label>
+						<Select
+							name="education_stage"
+							value={educationStage}
+							onChange={handleEducationStageChange}
+						>
+							<option value="PRIMARY">
+								المرحلة {EDUCATION_STAGE_LABELS.PRIMARY}
+							</option>
+							<option value="PREPARATORY">
+								المرحلة {EDUCATION_STAGE_LABELS.PREPARATORY}
+							</option>
+							<option value="SECONDARY">
+								المرحلة {EDUCATION_STAGE_LABELS.SECONDARY}
+							</option>
+						</Select>
+						{state.fieldErrors?.education_stage && (
+							<p className="text-red-500 text-xs px-1">
+								{state.fieldErrors.education_stage[0]}
+							</p>
+						)}
+					</div>
+
+					<div className="space-y-2">
+						<label className="text-on-surface font-semibold px-1">
+							الصف الدراسي
+						</label>
+						<Select
+							name="education_year"
+							value={String(educationYear)}
+							onChange={event => setEducationYear(Number(event.target.value))}
+						>
+							{availableYears.map(year => (
+								<option key={year} value={year}>
+									الصف {EDUCATION_YEAR_LABELS[year]}
+								</option>
+							))}
+						</Select>
+						{state.fieldErrors?.education_year && (
+							<p className="text-red-500 text-xs px-1">
+								{state.fieldErrors.education_year[0]}
+							</p>
+						)}
+					</div>
 				</div>
 
 				{/* Location Picker */}
@@ -337,7 +495,7 @@ export default function SessionForm({
 				>
 					<button
 						type="submit"
-						disabled={isPending}
+						disabled={isPending || hasIncompatibleAssigned}
 						className="w-full h-14 sm:h-16 bg-primary text-on-primary rounded-full font-manrope font-extrabold text-lg sm:text-xl shadow-lg hover:bg-primary-container hover:text-on-primary-container active:scale-95 transition-all duration-150 flex items-center justify-center gap-3 disabled:opacity-50"
 					>
 						{isPending
@@ -354,6 +512,11 @@ export default function SessionForm({
 							</span>
 						)}
 					</button>
+					{submitLockReason ? (
+						<p className="mt-2 text-center text-xs font-semibold text-red-700">
+							{submitLockReason}
+						</p>
+					) : null}
 				</div>
 			</section>
 		</form>

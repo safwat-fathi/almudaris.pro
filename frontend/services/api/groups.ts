@@ -1,4 +1,5 @@
 import { HTTPService } from "../base/HTTPService";
+import type { EducationStage, GradeTarget } from "@/types/grade";
 
 export type GroupStatus = "Scheduled" | "Completed" | "Cancelled";
 export type LocationType = "Online" | "Physical";
@@ -12,6 +13,8 @@ export interface CreateGroupData {
 	location_link?: string;
 	location_place?: string;
 	title?: string;
+	education_stage: EducationStage;
+	education_year: number;
 	is_recurring?: boolean;
 	recurrence_pattern?: string;
 	recurrence_count?: number;
@@ -30,7 +33,7 @@ export interface GroupStudent {
 	note_updated_at?: string;
 }
 
-export interface Group {
+export interface Group extends GradeTarget {
 	id: number;
 	title?: string;
 	date: string;
@@ -47,10 +50,7 @@ export interface Group {
 	created_by_id: number;
 	created_at: string;
 	updated_at: string;
-	students?: GroupStudent[];
-	education_stage?: string;
-	education_year?: number;
-	grade_label?: string;
+	students: GroupStudent[];
 }
 
 export interface PaginatedGroups {
@@ -62,13 +62,17 @@ export interface PaginatedGroups {
 }
 
 export interface CreateGroupResponse {
-	data: Group[];
-	warnings: string[];
+	data: {
+		groups: Group[];
+		warnings: string[];
+	};
 }
 
 export interface UpdateGroupResponse {
-	data: Group;
-	warnings: string[];
+	data: {
+		group: Group;
+		warnings: string[];
+	};
 }
 
 export interface FetchGroupsParams {
@@ -76,7 +80,7 @@ export interface FetchGroupsParams {
 	to?: string;
 	status?: GroupStatus;
 	student_id?: number;
-	education_stage?: string;
+	education_stage?: EducationStage;
 	education_year?: number;
 	page?: number;
 	limit?: number;

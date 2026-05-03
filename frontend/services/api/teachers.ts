@@ -1,11 +1,17 @@
 import { HTTPService } from "../base/HTTPService";
+import type { GradeTarget } from "@/types/grade";
 
-export interface Student {
+export interface Student extends GradeTarget {
 	id: number;
 	name: string;
-	education_stage?: string;
-	education_year?: number;
-	grade_label?: string;
+	grade_needs_review?: boolean;
+}
+
+export interface LinkedTeacher extends GradeTarget {
+	id: number;
+	name: string;
+	phone: string;
+	email?: string;
 }
 
 /**
@@ -21,7 +27,7 @@ class TeachersService extends HTTPService {
 	 * Fetches all students enrolled with the authenticated teacher.
 	 */
 	async fetchStudents(params?: {
-		education_stage?: string;
+		education_stage?: GradeTarget["education_stage"];
 		education_year?: number;
 	}): Promise<{ data: Student[] }> {
 		const query = new URLSearchParams();
@@ -40,6 +46,17 @@ class TeachersService extends HTTPService {
 	 */
 	async fetchInviteCode(): Promise<{ inviteCode: string }> {
 		return this.get<{ inviteCode: string }>("/teachers/invite-code");
+	}
+
+	/**
+	 * Removes a student enrollment from the authenticated teacher.
+	 */
+	async removeStudent(
+		studentId: number,
+	): Promise<{ success: boolean; message: string }> {
+		return this.delete<{ success: boolean; message: string }>(
+			`/teachers/students/${studentId}`,
+		);
 	}
 }
 

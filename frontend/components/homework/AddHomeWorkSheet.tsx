@@ -53,9 +53,9 @@ export function AddHomeWorkSheet({ groupId }: { groupId: number }) {
 
 					<form
 						action={handleSubmit}
-						className="flex flex-col gap-4 font-body flex-1"
+						className="flex flex-col font-body flex-1"
 					>
-						<div>
+						<div className="mb-4">
 							<Input
 								name="title"
 								type="text"
@@ -71,7 +71,8 @@ export function AddHomeWorkSheet({ groupId }: { groupId: number }) {
 								className="w-full pt-2 px-6 bg-surface-container-lowest border-2 border-transparent focus:border-primary rounded-lg text-on-surface placeholder:text-outline/50 focus:ring-0 focus:outline-none transition-all"
 							/>
 						</div>
-						<div>
+						<div className="flex flex-col gap-2">
+							<label htmlFor="due_date">اخر موعد للتقديم</label>
 							<Input
 								type="date"
 								name="due_date"
@@ -84,7 +85,7 @@ export function AddHomeWorkSheet({ groupId }: { groupId: number }) {
 								type="submit"
 								className="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-lg hover:bg-primary-container transition-colors"
 							>
-								إضافة واجب
+								إضافة الواجب
 							</button>
 						</div>
 					</form>

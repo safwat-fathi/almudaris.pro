@@ -64,29 +64,44 @@ export default async function SessionDetailsPage({ params }: Props) {
 	const homeworkList = await fetchHomeworksByGroupId(groupId);
 
 	return (
-		<>
-			<main className="max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex flex-col">
-				<SessionAttendanceScreen group={group} />
+		<main className="max-w-5xl mx-auto w-full flex flex-col">
+			<Link
+				href="/sessions"
+				className="px-2 py-4 inline-flex items-center gap-2 text-sm font-semibold text-on-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md"
+			>
+				<span
+					className="material-symbols-outlined text-xl"
+					style={{ direction: "ltr" }}
+				>
+					arrow_forward
+				</span>
+				<span className="font-bold">رجوع</span>
+			</Link>
 
-				<section className="p-6 rounded-lg pb-24 mt-4">
-					<div className="flex justify-between items-center mb-4">
-						<h2 className="text-xl font-headline font-bold text-[--color-on-surface]">
-							الواجبات 📚
-						</h2>
-						<AddHomeWorkSheet groupId={groupId} />
-					</div>
+			<SessionAttendanceScreen group={group} />
 
-					<div className="flex flex-col gap-4 mt-4">
-						{homeworkList.length === 0 ? (
-							<div className="text-[--color-outline] text-sm py-8 text-center bg-[--color-surface-container] rounded-2xl">
-								لا توجد واجبات حالياً.
-							</div>
-						) : (
-							homeworkList.map(homework => (
+			<section className="p-6 rounded-lg pb-24 mt-4">
+				<div className="flex justify-between items-center mb-4">
+					<h2 className="text-xl font-headline font-bold text-[--color-on-surface]">
+						الواجبات 📚
+					</h2>
+					<AddHomeWorkSheet groupId={groupId} />
+				</div>
+
+				<div className="flex flex-col gap-4 mt-4">
+					{homeworkList.length === 0 ? (
+						<div className="text-[--color-outline] text-sm py-8 text-center bg-[--color-surface-container] rounded-2xl">
+							لا توجد واجبات حالياً.
+						</div>
+					) : (
+						homeworkList.map(homework => (
+							<div
+								key={homework.id}
+								className="p-4 bg-surface-container rounded-2xl flex justify-between items-center"
+							>
 								<Link
 									href={`/sessions/${groupId}/homework/${homework.id}`}
-									key={homework.id}
-									className="p-4 bg-surface-container rounded-2xl flex justify-between items-center"
+									className="flex-1"
 								>
 									<div>
 										<h3 className="font-bold text-on-surface">
@@ -96,33 +111,30 @@ export default async function SessionDetailsPage({ params }: Props) {
 											الحالة: {homework.is_open ? "مفتوح للتقديم" : "مغلق"}
 										</p>
 									</div>
-
-									<form
-										action={async () => {
-											"use server";
-											await toggleHomeworkStatus(
-												homework.id,
-												!homework.is_open,
-											);
-										}}
-									>
-										<button
-											type="submit"
-											className={`px-3 py-1 text-xs font-bold rounded-full ${
-												homework.is_open
-													? "bg-error text-on-error"
-													: "bg-secondary text-on-secondary"
-											}`}
-										>
-											{homework.is_open ? "إغلاق الواجب" : "فتح الواجب"}
-										</button>
-									</form>
 								</Link>
-							))
-						)}
-					</div>
-				</section>
-			</main>
-		</>
+
+								<form
+									action={async () => {
+										"use server";
+										await toggleHomeworkStatus(homework.id, !homework.is_open);
+									}}
+								>
+									<button
+										type="submit"
+										className={`px-3 py-1 text-xs font-bold rounded-full ${
+											homework.is_open
+												? "bg-error text-on-error"
+												: "bg-secondary text-on-secondary"
+										}`}
+									>
+										{homework.is_open ? "إغلاق الواجب" : "فتح الواجب"}
+									</button>
+								</form>
+							</div>
+						))
+					)}
+				</div>
+			</section>
+		</main>
 	);
 }

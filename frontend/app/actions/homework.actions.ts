@@ -1,18 +1,29 @@
 'use server';
 
-import { createHomeworkSchema, CreateHomeworkInput } from '../../schemas/homework.schema';
+import { createHomeworkSchema } from '../../schemas/homework.schema';
 import { revalidatePath } from 'next/cache';
+import { homeworkService } from '@/services/api/homework';
 
 export async function createHomework(formData: FormData) {
-  // ... (previous logic)
-  const rawData: any = {};
+  const rawData: Record<string, unknown> = {};
 	
   formData.forEach((value, key) => {
 		rawData[key] = value;
   });
   
   if (rawData.group_id) rawData.group_id = Number(rawData.group_id);
-	console.log("rawData", rawData);
+  if (typeof rawData.title === 'string') rawData.title = rawData.title.trim();
+  if (typeof rawData.description === 'string') {
+    const description = rawData.description.trim();
+    if (description.length === 0) {
+      delete rawData.description;
+    } else {
+      rawData.description = description;
+    }
+  }
+  if (rawData.due_date === '') {
+    rawData.due_date = null;
+  }
 
   const parsed = createHomeworkSchema.safeParse(rawData);
 
@@ -20,50 +31,30 @@ export async function createHomework(formData: FormData) {
     return { error: parsed.error.message };
   }
 
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
   try {
-    const res = await fetch(`${backendUrl}/homework`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(parsed.data),
-    });
-
-    if (!res.ok) {
-      throw new Error('Failed to create homework on backend');
-    }
-
+    await homeworkService.createHomework(parsed.data);
+    revalidatePath('/sessions');
+    revalidatePath(`/sessions/${parsed.data.group_id}`);
     revalidatePath('/sessions/[id]', 'page');
     return { success: true };
-  } catch (error) {
-		console.log("error", error);
-		
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message) {
+      return { error: error.message };
+    }
     return { error: 'حدث خطأ أثناء إضافة الواجب' };
   }
 }
 
 export async function toggleHomeworkStatus(homeworkId: number, isOpen: boolean) {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
   try {
-    const res = await fetch(`${backendUrl}/homework/${homeworkId}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ is_open: isOpen }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Failed to update homework status');
-    }
-
+    await homeworkService.toggleHomeworkStatus(homeworkId, isOpen);
+    revalidatePath('/sessions');
     revalidatePath('/sessions/[id]', 'page');
     return { success: true };
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message) {
+      return { error: error.message };
+    }
     return { error: 'حدث خطأ أثناء تحديث حالة الواجب' };
   }
 }
-

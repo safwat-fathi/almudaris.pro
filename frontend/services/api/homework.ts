@@ -1,6 +1,7 @@
 import { HTTPService } from "../base/HTTPService";
+import type { EducationStage, GradeTarget } from "@/types/grade";
 
-export interface Homework {
+export interface Homework extends GradeTarget {
 	id: number;
 	group_id: number;
 	title: string;
@@ -9,9 +10,15 @@ export interface Homework {
 	is_open: boolean;
 	created_at: string;
 	updated_at: string;
-	education_stage?: string;
+}
+
+export interface CreateHomeworkPayload {
+	group_id: number;
+	title: string;
+	description?: string;
+	due_date?: string | null;
+	education_stage?: EducationStage;
 	education_year?: number;
-	grade_label?: string;
 }
 
 class HomeworkService extends HTTPService {
@@ -21,7 +28,7 @@ class HomeworkService extends HTTPService {
 
 
 	async fetchHomework(params?: {
-		education_stage?: string;
+		education_stage?: EducationStage;
 		education_year?: number;
 	}) {
 		const query = new URLSearchParams();
@@ -33,6 +40,16 @@ class HomeworkService extends HTTPService {
 
 	async fetchHomeworkByGroupId(groupId: number) {
 		return this.get<{ data: Homework[] }>(`/homework/group/${groupId}`);
+	}
+
+	async createHomework(payload: CreateHomeworkPayload) {
+		return this.post<{ data: Homework }>("/homework", payload);
+	}
+
+	async toggleHomeworkStatus(homeworkId: number, isOpen: boolean) {
+		return this.patch<{ data: Homework }>(`/homework/${homeworkId}/status`, {
+			is_open: isOpen,
+		});
 	}
 
 	async getSubmissionsByHomeworkId(homeworkId: string) {

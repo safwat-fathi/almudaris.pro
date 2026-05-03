@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useState,
   ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -25,6 +26,7 @@ export function BottomSheet({
   children,
   closeThreshold = 0.3,
 }: BottomSheetProps) {
+  const [mounted, setMounted] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -158,6 +160,10 @@ export function BottomSheet({
   const onPointerUp = useCallback(() => handleDragEnd(), [handleDragEnd]);
 
   // ─── Render ──────────────────────────────────────────────────
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
   return createPortal(
     <div
       ref={containerRef}
@@ -195,3 +201,6 @@ export function BottomSheet({
     document.body
   );
 }
+  useEffect(() => {
+    setMounted(true);
+  }, []);

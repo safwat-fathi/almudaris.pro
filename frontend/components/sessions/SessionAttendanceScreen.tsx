@@ -77,7 +77,7 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
   return (
 		<>
 			{/* Session Switcher Navigation - Simplified for now */}
-			<nav className="bg-surface-container-lowest border-b border-outline-variant/20 sticky top-16 z-40">
+			{/* <nav className="bg-surface-container-lowest border-b border-outline-variant/20 sticky top-16 z-40">
 				<div className="flex items-center justify-between h-14 px-4">
 					<button
 						onClick={() => router.back()}
@@ -100,7 +100,7 @@ export default function SessionAttendanceScreen({ group }: { group: Group }) {
 
 					<div className="w-20"></div>
 				</div>
-			</nav>
+			</nav> */}
 
 			{/* Session Header Info */}
 			<div className="px-6 py-8 bg-linear-to-b from-surface-container-lowest to-surface">

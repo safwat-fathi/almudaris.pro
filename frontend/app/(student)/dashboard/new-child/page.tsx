@@ -3,10 +3,11 @@ import { ChildForm } from "@/components/children/ChildForm";
 import { createChildAction } from "./actions";
 import { cookies } from "next/headers";
 import CONSTANTS from "@/lib/constants";
+import type { LinkedTeacher } from "@/services/api/teachers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-async function getLinkedTeachers() {
+async function getLinkedTeachers(): Promise<LinkedTeacher[]> {
   const cookieStore = await cookies();
   const token = cookieStore.get(CONSTANTS.ACCESS_TOKEN)?.value;
   
@@ -22,7 +23,7 @@ async function getLinkedTeachers() {
     if (!res.ok) return [];
     const json = await res.json();
     return Array.isArray(json) ? json : (json.data || []);
-  } catch (error) {
+  } catch {
     return [];
   }
 }

@@ -20,6 +20,7 @@ import {
 import { RecurringSeries } from './entities/recurring-series.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
+import { Student } from '../students/entities/student.entity';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { EditScope } from './dto/update-group.dto';
@@ -42,6 +43,8 @@ export class GroupsService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(ChildTeacherEnrollment)
     private readonly enrollmentRepo: Repository<ChildTeacherEnrollment>,
+    @InjectRepository(Student)
+    private readonly studentRepo: Repository<Student>,
   ) {}
 
   // ==================== US1: Create Group ====================
@@ -84,6 +87,12 @@ export class GroupsService {
         `Students [${invalidStudents.join(', ')}] do not belong to you.`,
       );
     }
+
+    await this.validateStudentsGradeCompatibility(
+      dto.student_ids,
+      dto.education_stage,
+      dto.education_year,
+    );
 
     // Load student data for name snapshots (FR-017)
     const students = await this.userRepo.find({
@@ -303,6 +312,14 @@ export class GroupsService {
         'لا يمكن تعديل تفاصيل حصة مكتملة أو ملغاة.',
       );
     }
+
+    const effectiveStudentIds =
+      dto.student_ids ?? group.students.map((student) => student.student_id);
+    await this.validateStudentsGradeCompatibility(
+      effectiveStudentIds,
+      stage,
+      year,
+    );
 
     // Determine which groups to update based on edit_scope
     const groupsToUpdate = await this.resolveEditScope(
@@ -537,5 +554,70 @@ export class GroupsService {
 
     // ALL scope — includes all in series
     return qb.getMany();
+  }
+
+  private async validateStudentsGradeCompatibility(
+    studentIds: number[],
+    educationStage: EducationStage,
+    educationYear: number,
+  ): Promise<void> {
+    if (studentIds.length === 0) return;
+
+    const studentProfiles = await this.studentRepo.find({
+      where: { user_id: In(studentIds) },
+      relations: ['user'],
+    });
+
+    const profilesByUserId = new Map(
+      studentProfiles.map((profile) => [profile.user_id, profile]),
+    );
+
+    const incompatibleStudents = studentIds
+      .map((studentId) => {
+        const profile = profilesByUserId.get(studentId);
+        if (!profile) {
+          return {
+            id: studentId,
+            name: `#${studentId}`,
+            education_stage: 'MISSING_PROFILE',
+            education_year: -1,
+          };
+        }
+
+        const isCompatible =
+          profile.education_stage === educationStage &&
+          profile.education_year === educationYear;
+        if (isCompatible) return null;
+
+        return {
+          id: studentId,
+          name: profile.user?.name || `#${studentId}`,
+          education_stage: profile.education_stage,
+          education_year: profile.education_year,
+        };
+      })
+      .filter(
+        (
+          student,
+        ): student is {
+          id: number;
+          name: string;
+          education_stage: EducationStage | 'MISSING_PROFILE';
+          education_year: number;
+        } => student !== null,
+      );
+
+    if (incompatibleStudents.length > 0) {
+      const formatted = incompatibleStudents
+        .map(
+          (student) =>
+            `${student.name} (#${student.id}) [${student.education_stage}/${student.education_year}]`,
+        )
+        .join(', ');
+
+      throw new BadRequestException(
+        `These students do not match the group grade ${educationStage}/${educationYear}: ${formatted}.`,
+      );
+    }
   }
 }

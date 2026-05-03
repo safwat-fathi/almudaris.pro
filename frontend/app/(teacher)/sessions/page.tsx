@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import SessionsView from "@/components/sessions/SessionsView";
-import { groupsService } from "@/services/api/groups";
+import { Group, groupsService } from "@/services/api/groups";
 import { Student, teachersService } from "@/services/api/teachers";
+import type { EducationStage } from "@/types/grade";
 
 export const metadata: Metadata = {
 	title: "الجلسات",
@@ -15,10 +16,10 @@ export default async function SessionsPage({
 	searchParams: Promise<{ education_stage?: string; education_year?: string }>
 }) {
 	const params = await searchParams;
-	const educationStage = params.education_stage;
+	const educationStage = params.education_stage as EducationStage | undefined;
 	const educationYear = params.education_year ? Number(params.education_year) : undefined;
 
-	let groups = [];
+	let groups: Group[] = [];
 	let students: Student[] = [];
 	let error = null;
 

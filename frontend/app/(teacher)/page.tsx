@@ -25,13 +25,11 @@ export default async function Home() {
   }
 
   return (
-    <>
-      <main className="max-w-xl mx-auto px-6 mt-8 space-y-10 w-full mb-24">
-        <Greeting />
-        <SessionsList groups={groups} students={students} />
-        <QuickActions />
-        <AlertsList />
-      </main>
-    </>
-  );
+		<main className="max-w-xl mx-auto px-6 mt-8 space-y-10 w-full mb-24">
+			<Greeting />
+			<SessionsList groups={groups} students={students} />
+			<QuickActions students={students} />
+			<AlertsList />
+		</main>
+	);
 }

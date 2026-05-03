@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import SessionForm from "./SessionForm";
 import { Student } from "@/services/api/teachers";
@@ -16,14 +15,6 @@ export function NewSessionBottomSheet({
   onClose,
   students,
 }: NewSessionBottomSheetProps) {
-  const formKeyRef = useRef(0);
-  const prevIsOpen = useRef(isOpen);
-
-  if (isOpen && !prevIsOpen.current) {
-    formKeyRef.current += 1;
-  }
-  prevIsOpen.current = isOpen;
-
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose}>
       {/* Header */}
@@ -42,7 +33,7 @@ export function NewSessionBottomSheet({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-6 custom-scrollbar">
         <SessionForm
-          key={formKeyRef.current}
+          key={isOpen ? "new-session-open" : "new-session-closed"}
           students={students}
           isBottomSheet={true}
           onSuccess={onClose}

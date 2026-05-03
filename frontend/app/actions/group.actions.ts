@@ -27,6 +27,8 @@ export async function createGroupAction(
 		location_link: formData.get("location_link") || undefined,
 		location_place: formData.get("location_place") || undefined,
 		title: formData.get("title") || undefined,
+		education_stage: formData.get("education_stage"),
+		education_year: formData.get("education_year"),
 		is_recurring: formData.get("is_recurring") === "true",
 		recurrence_pattern: formData.get("recurrence_pattern") || undefined,
 		recurrence_count: formData.get("recurrence_count") || undefined,
@@ -44,7 +46,8 @@ export async function createGroupAction(
 
 	try {
 		// Exclude csrf_token when sending to the API
-		const { csrf_token: _, ...apiData } = parsed.data;
+		const { csrf_token, ...apiData } = parsed.data;
+		void csrf_token;
 
 		// Convert location_type back to the exact type
 		const requestData: CreateGroupData = {
@@ -59,8 +62,8 @@ export async function createGroupAction(
 
 		return {
 			success: true,
-			data: response.data,
-			warnings: response.warnings,
+			data: response.data.groups,
+			warnings: response.data.warnings,
 		};
 	} catch (error: unknown) {
 		const err = error as Error;
@@ -86,6 +89,8 @@ export async function updateGroupAction(
 		location_link: formData.get("location_link") || undefined,
 		location_place: formData.get("location_place") || undefined,
 		title: formData.get("title") || undefined,
+		education_stage: formData.get("education_stage"),
+		education_year: formData.get("education_year"),
 		edit_scope: formData.get("edit_scope") || "THIS",
 		csrf_token: formData.get("csrf_token") || undefined,
 	};
@@ -101,12 +106,16 @@ export async function updateGroupAction(
 
 	try {
 		const {
-			csrf_token: _csrf_token,
-			is_recurring: _is_recurring,
-			recurrence_pattern: _recurrence_pattern,
-			recurrence_count: _recurrence_count,
+			csrf_token,
+			is_recurring,
+			recurrence_pattern,
+			recurrence_count,
 			...apiData
 		} = parsed.data as Record<string, unknown>;
+		void csrf_token;
+		void is_recurring;
+		void recurrence_pattern;
+		void recurrence_count;
 
 		const requestData = {
 			...apiData,
@@ -121,8 +130,8 @@ export async function updateGroupAction(
 
 		return {
 			success: true,
-			data: response.data,
-			warnings: response.warnings,
+			data: response.data.group,
+			warnings: response.data.warnings,
 		};
 	} catch (error: unknown) {
 		const err = error as Error;

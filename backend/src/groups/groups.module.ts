@@ -8,6 +8,7 @@ import { RecurringSeries } from './entities/recurring-series.entity';
 import { User } from '../users/entities/user.entity';
 import { ChildTeacherEnrollment } from '../children/entities/child-teacher-enrollment.entity';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { Student } from '../students/entities/student.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
       RecurringSeries,
       User,
       ChildTeacherEnrollment,
+      Student,
     ]),
   ],
   controllers: [GroupsController],

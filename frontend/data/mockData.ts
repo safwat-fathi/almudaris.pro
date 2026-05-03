@@ -31,23 +31,6 @@ export const mockSessions = [
 	},
 ];
 
-export const mockQuickActions = [
-	{
-		id: "1",
-		label: "إضافة طالب",
-		icon: "person_add",
-		href: "/students/invite",
-	},
-	{
-		id: "2",
-		label: "إضافة حصة",
-		icon: "calendar_add_on",
-		href: "/sessions?new=true",
-	},
-	{ id: "3", label: "تسجيل دفع", icon: "payments", href: "/payments/new" },
-	{ id: "4", label: "رابط الدعوة", icon: "qr_code", href: "/profile/invite" },
-];
-
 export const mockAlerts = [
   {
     id: "1",

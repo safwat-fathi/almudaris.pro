@@ -59,10 +59,15 @@ export default async function HomeworkSubmissionsPage({
 					</h1>
 				</div>
 				<div className="flex flex-col items-center gap-2">
-					<p className="text-on-surface-variant ">الحصة: {group.data.title}</p>
-					<p className="text-on-surface-variant ">الواجب: {homework?.title}</p>
+					<p className="text-on-surface-variant">الحصة: {group.data.title}</p>
+					<p className="text-on-surface-variant">الواجب: {homework?.title}</p>
+					<p className="text-on-surface-variant max-w-full text-center wrap-break-word break-all whitespace-pre-wrap">
+						تفاصيل الواجب: {homework?.description}
+					</p>
 					{homework?.grade_label && (
-						<p className="text-primary font-bold text-sm">{homework.grade_label}</p>
+						<p className="text-primary font-bold text-sm">
+							{homework.grade_label}
+						</p>
 					)}
 				</div>
 			</header>

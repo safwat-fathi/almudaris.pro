@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import type { EducationStage } from "@/types/grade";
 
 export interface Teacher {
   id: number;
   name: string;
+  phone?: string;
+  email?: string;
+  education_stage?: EducationStage;
+  education_year?: number;
+  grade_label?: string;
   subject?: string;
   image?: string;
   isLinked?: boolean; // If already linked to the parent but not necessarily to the child. Let's assume all passed teachers are linked to the parent.
@@ -15,9 +21,10 @@ export interface Child {
   id: number;
   name: string;
   email?: string;
-  education_stage?: string;
+  education_stage?: EducationStage;
   education_year?: number;
   grade_label?: string;
+  grade_needs_review?: boolean;
   image?: string;
 }
 
@@ -130,7 +137,7 @@ export function AssignTeacherBottomSheet({
               <div className="flex-1 overflow-hidden">
                 <h3 className="font-headline font-bold text-base text-on-surface truncate">{teacher.name}</h3>
                 <p className={`font-body text-sm ${isSelected ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}>
-                  {teacher.subject || "مواد عامة"}
+                  {teacher.grade_label || teacher.subject || "مواد عامة"}
                 </p>
               </div>
 

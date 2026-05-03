@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, KeyboardEvent, MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatNumber, normalizeTimeString, formatTimeUI, formatDate } from "@/lib/format";
 import { Group } from "@/services/api/groups";
 
@@ -8,6 +12,8 @@ interface SessionCardProps {
 }
 
 export default function SessionCard({ group, onEdit }: SessionCardProps) {
+	const router = useRouter();
+	const sessionHref = `/sessions/${group.id}`;
 	const isOnline = group.location_type === "Online";
 	const locationLabel = isOnline ? "أونلاين" : "حضورياً";
 
@@ -51,14 +57,38 @@ export default function SessionCard({ group, onEdit }: SessionCardProps) {
 	const { label: stateLabel, colorClass: stateColorClass } =
 		stateConfig[derivedState];
 
+	useEffect(() => {
+		router.prefetch(sessionHref);
+	}, [router, sessionHref]);
+
+	const navigateToSession = () => {
+		router.push(sessionHref);
+	};
+
+	const handleCardKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			navigateToSession();
+		}
+	};
+
+	const stopCardNavigation = (e: MouseEvent<HTMLElement>) => {
+		e.stopPropagation();
+	};
+
 	return (
 		<div
+			role="link"
+			tabIndex={0}
+			onClick={navigateToSession}
+			onKeyDown={handleCardKeyDown}
 			className={`bg-white p-5 rounded-2xl ${isPrimary ? "shadow-md border-r-4 border-primary" : "shadow-sm border-r-4 border-outline-variant"} flex flex-col gap-4 relative`}
 		>
 			{onEdit ? (
 				<button
 					onClick={e => {
 						e.preventDefault();
+						e.stopPropagation();
 						onEdit();
 					}}
 					className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors cursor-pointer"
@@ -68,6 +98,8 @@ export default function SessionCard({ group, onEdit }: SessionCardProps) {
 			) : (
 				<Link
 					href={`/sessions/${group.id}/edit`}
+					prefetch
+					onClick={e => e.stopPropagation()}
 					className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
 				>
 					<span className="material-symbols-outlined text-[18px]">edit</span>
@@ -139,7 +171,9 @@ export default function SessionCard({ group, onEdit }: SessionCardProps) {
 
 			{(derivedState === "Ongoing" || derivedState === "Finished") && (
 				<Link
-					href={`/sessions/${group.id}`}
+					href={sessionHref}
+					prefetch
+					onClick={stopCardNavigation}
 					className="block text-center bg-primary text-on-primary w-full py-3.5 rounded-xl font-bold text-lg hover:opacity-95 active:scale-95 transition-all"
 				>
 					تسجيل الحضور
@@ -148,7 +182,9 @@ export default function SessionCard({ group, onEdit }: SessionCardProps) {
 
 			{derivedState === "Completed" && (
 				<Link
-					href={`/sessions/${group.id}`}
+					href={sessionHref}
+					prefetch
+					onClick={stopCardNavigation}
 					className="block text-center border-2 border-primary text-primary bg-transparent w-full py-3.5 rounded-xl font-bold text-lg hover:bg-primary/5 active:scale-95 transition-all"
 				>
 					عرض التفاصيل

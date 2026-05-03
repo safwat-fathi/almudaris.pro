@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+const educationStageSchema = z.enum([
+	"PRIMARY",
+	"PREPARATORY",
+	"SECONDARY",
+] as const);
+
+const validYearsByStage: Record<z.infer<typeof educationStageSchema>, number[]> =
+	{
+		PRIMARY: [1, 2, 3, 4, 5, 6],
+		PREPARATORY: [1, 2, 3],
+		SECONDARY: [1, 2, 3],
+	};
+
 export const createGroupSchema = z
 	.object({
 		date: z.string().date("التاريخ غير صحيح"),
@@ -14,6 +27,8 @@ export const createGroupSchema = z
 		location_link: z.string().optional(),
 		location_place: z.string().optional(),
 		title: z.string().optional(),
+		education_stage: educationStageSchema,
+		education_year: z.coerce.number().int().min(1).max(6),
 		is_recurring: z.coerce.boolean().optional(),
 		recurrence_pattern: z.string().optional(),
 		recurrence_count: z.coerce.number().optional(),
@@ -32,6 +47,13 @@ export const createGroupSchema = z
 				code: "custom",
 				message: "مكان الحصة مطلوب",
 				path: ["location_place"],
+			});
+		}
+		if (!validYearsByStage[data.education_stage].includes(data.education_year)) {
+			ctx.addIssue({
+				code: "custom",
+				message: "الصف الدراسي غير متاح لهذه المرحلة",
+				path: ["education_year"],
 			});
 		}
 	});

@@ -3,6 +3,7 @@ import StudentsHeader from "@/components/students/StudentsHeader";
 import StudentsTable from "@/components/students/StudentsTable";
 import StudentsStats from "@/components/students/StudentsStats";
 import { Student, teachersService } from "@/services/api/teachers";
+import type { EducationStage } from "@/types/grade";
 
 export const metadata: Metadata = {
   title: "قائمة الطلاب | المدرس برو",
@@ -18,7 +19,7 @@ export default async function StudentsPage({
 	let error = null;
 
 	const params = await searchParams;
-	const educationStage = params.education_stage;
+	const educationStage = params.education_stage as EducationStage | undefined;
 	const educationYear = params.education_year ? Number(params.education_year) : undefined;
 
 	try {
